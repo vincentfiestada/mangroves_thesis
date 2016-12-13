@@ -1,12 +1,12 @@
-\documentclass[12pt,letterpaper]{article}
+\documentclass[14pt,letterpaper]{article}
 \usepackage{scl-thesis-prop}
 \usepackage{amssymb,amsmath,graphicx,multicol,hyperref,rotating,lipsum}
 \usepackage[utf8]{inputenc}
-\usepackage[T1]{fontenc}
+%\usepackage[T1]{fontenc}
 
 
 \title{An Agent-Based Model for Mangrove Regrowth in Multispecific Fragmented Habitats}
-\author{Andrew Vince Lorbis, Vincent Paul Fiestada}
+\author{Vincent Paul Fiestada, Andrew Vince Lorbis}
 \documenttype{Thesis Proposal}
 \degree{Bachelor of Science in Computer Science}
 \proposaldate{\today}
@@ -36,14 +36,30 @@ According to the National Oceanic and Atmospheric Administration (NOAA), Mangrov
 Mangrove seedlings can float and take root once it finds ground, and can disperse and grow far away from parent tree. Some species have seeds that develop while still attached to the parent plant, and break off afterwards.
 Some mangroves have been known to live for more than 100 years. Most trees will never reach this age because of various factors that could affect its growth and mortality, e.g. tidal inundation, salinity, competition between other mangroves, and the presence of storms.
 \section{Preliminaries}
-\subsection{Topic 1}
-Block Disturbance/Fragmented Habitat stuff?
+\subsection{Block Disturbance}
+In the Block Disturbance (BD) model by Hiebeler \cite{hiebelerdisturbance}, agents are placed in an environment consisting of a lattice of tiles that individuals can occupy, and periodic disturbances which cause their death. This model can be implemented on storms (which is a Poisson process) that occur randomly to damage the mangrove populations. Every time a storm occurs, an area in 
+the mangrove forest is more heavily damaged than other areas. This randomness could be likened
+to the different paths a storm or typhoon can take while passing through the mangroves.
 
-\subsection{}
-Do we discuss spatiotemporal stuff here
+\subsection{Fragmented Habitat}
+The Fragmented Habitat (FH) model by Hiebeler \cite{hiebelerfragmented}
+It mainly includes a long-distance dispersal feature, and restricts a part of the lattice as unsuitable for habitat (i.e. agents cannot occupy or disperse their offspring to these tiles).
+Its application can be seen on how mangroves disperse their seedlings, which can grow far from the parent tree. It also accounts for how some areas (e.g. highly saline water)
+are uninhabitable to mangroves as is.
+
+\subsection{Noise}
+Statistical noise is the term for recognized amounts of unexplained variation in a sample.
+Some notable examples are Gaussian noise and white noise. Noise is used to mimic the 
+inherent variability in nature. An addition of noise in the simulation of mangrove growth greatly
+adds to its stochasticity.
 
 \section{Problem Statement}
-Currently, many 
+This project provides an accurate model for the population dynamics of mangrove
+populations subjected to various conditions and factors. It is an improvement over
+the project of Ang, Mariano, et al.\cite{mangrovesAngMariano}
+The paradigm used is agent-based modeling, which represents ecological units (in this case, unit
+populations of mangroves) as autonomous entities called agents.
+
 
 \section{Objectives of the Study}
 The study aims to project the growth of heterospecific mangrove populations	living in a fragmented habitat. The target use case of the model is in predicting the success or failure of mangrove restoration strategies given the type of habitat, the species that inhabit it, the species that will be planted, and locations of mangrove stands.
@@ -56,15 +72,15 @@ The study aims to project the growth of heterospecific mangrove populations	livi
 \hline
 Task Description & Date \\
 \hline
-Coding of model with stochastic growth & January 2016\\
+Coding of model with stochastic growth & First and Second Week of January 2016\\
 \hline
-Addition of stochastic death and recruitment & February 2016\\
+Addition of stochastic death and recruitment & Third Week of January 2016\\
 \hline
-Addition of stochastic storms & March 2016\\
+Addition of stochastic storms & Fourth Week of January 2016\\
 \hline
-Monte Carlo experiments & April 2016\\
+Monte Carlo experiments & First Week of February 2016\\
 \hline
-Compilation and results and finalization of paper & May 2016\\
+Compilation and results and finalization of paper & Second Week of February 2016\\
 \hline
 \end{tabular}
 
