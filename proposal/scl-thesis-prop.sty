@@ -1,0 +1,135 @@
+%SCL Thesis/Dissertation Proposal Document Style File v1.0 (2014/11/10)
+%Send comments, questions to John Justine S. Villar john_justine.villar@upd.edu.ph
+
+\typeout{SCL Thesis/Dissertation Proposal Document Style Ver. 2014.11.10  by JJSVillar}
+
+\makeatletter
+\usepackage{setspace}
+\usepackage[margin=1in]{geometry}
+
+% Disallow page breaks at hyphens (this will give some underfull vbox's, so an alternative is to use \brokenpenalty=100 and manually search for and fix such page breaks)
+\brokenpenalty=10000
+\clubpenalty=10000
+\widowpenalty=10000
+
+\usepackage{tocloft}
+\setlength\cftaftertoctitleskip{12pt}
+
+% \author, \title, \adviser, and \chairman are defined in report;
+% here are the rest of the front matter defining macros
+\def\documenttype#1{\gdef\@documenttype{#1}}
+\def\degree#1{\gdef\@degree{#1}}
+\def\specialization#1{\gdef\@specialization{#1}}
+\def\proposaldate#1{\gdef\@proposaldate{#1}}
+\def\adviser#1{\gdef\@adviser{#1}}
+\def\coadviser#1{\gdef\@coadviser{#1}}
+\def\memberone#1{\gdef\@memberone{#1}}
+\def\membertwo#1{\gdef\@membertwo{#1}}
+\def\memberthree#1{\gdef\@memberthree{#1}}
+\def\memberfour#1{\gdef\@memberfour{#1}}
+
+\def\@title{ }
+\def\@author{ }
+\def\@documenttype{ }
+\def\@degree{Master of Science in Computer Science}
+\def\@specialization{ }
+\def\@adviser{ }
+\def\@coadviser{ }
+\def\@memberone{ }
+\def\@membertwo{ }
+\def\@memberthree{ }
+\def\@memberfour{ }
+\def\@lab{Scientific Computing Laboratory}
+\def\@dept{Department of Computer Science}
+\def\@college{College of Engineering}
+\def\@university{University of the Philippines}
+
+\renewcommand\contentsname{\Large{Outline}}
+
+\newcommand{\newlinestretch}[1]{\renewcommand{\baselinestretch}{#1}\normalsize}
+% Make the proposal double-spaced
+\def\dsp\baselinestretch{1.5}
+
+
+\renewcommand{\maketitle}{%
+		\pagestyle{empty}
+        \begin{center}
+            \vfill
+            \newlinestretch{1.5}
+            {\bf \Large \@title}\\\vfill
+             A {\@documenttype} by \\[3ex]
+            {\sc \@author} \\[1ex]
+            \newlinestretch{1.2}
+            {\@lab\\\@dept\\\@college\\\@university}\\\vfill
+    
+            %\rule{4in}{0.5pt}\\[1ex]
+            \newlinestretch{1.3}
+            %Submitted in partial fulfillment of the requirements\\
+            for the degree of\\
+            \@degree\\
+            \ifx \@specialization   \empty \else \@specialization \fi
+            \vfill
+    
+            \textsc{\@documenttype\ Panel Members:}\\[1.5ex]
+             {\@adviser}, \textit{Adviser} \\
+            \ifx \@coadviser  \empty \else \@coadviser, \textit{Co-Adviser}\\  \fi
+            \ifx \@memberone   \empty \else \@memberone\\   \fi
+            \ifx \@membertwo   \empty \else \@membertwo\\   \fi
+            \ifx \@memberthree \empty \else \@memberthree\\ \fi
+            \ifx \@memberfour  \empty \else \@memberfour\\  \fi
+            \vfill
+            \newlinestretch{1.5}
+            {\@proposaldate}
+            \newpage
+        \end{center}
+        }
+        
+
+
+
+\renewenvironment{abstract}{
+    \doublespacing
+    \begin{center}
+        \Large{\textbf{Abstract}}
+        \vspace{.3in}
+    \end{center}
+    \phantomsection
+    \addcontentsline{toc}{section}{Abstract}
+}
+
+
+\def\prefacepages{
+\maketitle 
+\addtocontents{toc}{\protect\enlargethispage{1.5\normalbaselineskip}}
+\tableofcontents
+\newpage}
+
+\def\afterpreface{\newpage\pagestyle{plain}}
+
+
+% Start with \pagestyle{plain} in case front matter isn't processed
+\pagestyle{plain}
+
+\newcommand{\makereferences}[1]{%
+	\newpage
+    \singlespacing
+    \bibliographystyle{plain}
+    \phantomsection
+    \addcontentsline{toc}{section}{References}
+    {\footnotesize\bibliography{#1}}
+}
+
+
+
+\makeatother
+
+%Copyright (c) 2014 by John Justine S. Villar <john_justine.villar@upd.edu.ph>
+
+%This work may be distributed and/or modified under the conditions of the LaTeX Project Public License (LPPL), either version 1.3c of this license or (at your option) any later version.  The latest version of this license is in the file:
+%
+% http://www.latex-project.org/lppl.txt
+%
+% This work is "maintained" (as per LPPL maintenance status).
+%
+% END OF scl-thesis-prop.sty
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

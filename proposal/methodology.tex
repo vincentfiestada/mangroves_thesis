@@ -1,0 +1,125 @@
+\section{Methodology}
+
+To create the model, we draw heavily on an existing mathematical model of mangrove forest growth by Salmo and Juanico \cite{mangroveModelPaper} and make improvements to an agent-based implementation by Ang, Mariano, et al.\cite{mangrovesAngMariano}, with the addition of spatio-temporal colored noise. 
+
+Other changes to the model include variations in individual agent traits in order to simulate spatial inheritance, differentiation among the recruitment of viviparous species, and resistance to storm damage by clustered trees.
+
+What follows are the overview, design concepts, and details of the proposed model, and the design of Monte Carlo simulations that it will be used for.
+
+\subsection{Purpose}
+The model aims to be a generalized model of growth or regeneration of a heterospecific mangrove forest in a fragmented habitat.
+
+\subsection{Entities, State Variables and Scales}
+\subsubsection{Agents/Individuals}
+The main agent being modeled is the mangrove plant. These mangrove agents have a single state variable that determines their growth and maturity: the diameter at breast height of the mangrove, which we will refer to as $D$. Empirical data can be used to allometrically relate $D$ to other factors such as tree height and weight \cite{komiyama2005}.
+
+\paragraph{Agent Classification}
+Agents can be classified in two ways: by species and by maturity. As the model deals with heterospecific forests, the behavior of mangrove agents is modified by species-specific parameters. Mangroves are also divided into maturity levels. In Ang \& Mariano \cite{mangrovesAngMariano}, there were three maturity levels ranging from seedling to tree, with different mortality rates tied to each maturity level per species. The maturity levels themselves consisted of ranges for $D$.
+
+But this meant that after a mangrove attained a certain $D$, its chances of dying jumped abruptly downward. Furthermore, species-specific mortality may not be readily available from the field.
+
+Instead, we forego the species-specific mortality rates. The chances that a tree will die from natural causes is now tied solely to its $D$. In Ang \& Mariano, \textit{Sonneratia} and \textit{Avicennia} trees (with $D >= 5.0 cm$) had a 0.166 chance of dying from natural causes; for saplings ($D \in [2.5,5.0)$), it was 0.2, and for seedlings ($ D \in [0.5, 2.5)$), it was 0.4. \textit{Rhizophora} had slightly higher mortality rates for each maturity level. The same general trend of higher mortality for less mature plants is followed all mangroves. In the present model, we obtain a Lagrange interpolated mortality rate $\Gamma_D$ from these values, so that a plant's chances of dying from natural causes gradually but steadily declines as its $D$ increases. The interpolated mortality rate can also be improved by adding more empirically-collected points relating $D$ to mortality rate.
+
+\subsubsection{Spatial Units}
+The model simulates mangrove agents in a closed patch grid consisting of some land area and sea area, separated by an arbitrarily shaped coast. 
+
+
+\paragraph{Coastal Distance}
+Salinity and tidal inundation responses are approximately dependent on distance from the coast. The farther from the coast a patch is, the less inundated and the less saline it should be due to having less exposure to seawater.
+
+Each patch thus has a specific inundation and salinity effect to the growth of the mangrove plant on it.
+
+While Salmo and Juanico's original mathematical model used a hypothetical environment where the coast was perfectly straight and distance from the sea was precisely given by $x + y$, the researchers wish for the model to be applicable to any landscape. 
+
+To do this, we define a plant's distance to the coast $\delta(x,y)$ as the minimum radial distance from that plant to the nearest sea patch. It can be determined once for each plant upon recruitment by iteratively increasing the radial distance (with the plant as the center) until  a sea patch is reached. Greater efficiency can be achieved by calculating this value once for each patch in the grid. This approach is applicable even to landscapes with multiple coastlines.
+
+For the experiment, a reconstructed version of the Bangrin Marine Protected Area will be used due to the ready availability of GIS data.
+
+\subsubsection{Variables}
+The model's determination of individual mangrove growth $\frac{dD}{dt}$ follows a spatio-temporally stochastic version of the differential equation proposed by Salmo and Juanico. The deterministic change in $D$ with respect to time is as follows:
+
+\begin{equation}
+	\frac{dD}{dt} = \left(\frac{\Omega}{2 + \alpha}\right)D^{\beta - \alpha - 1} \left[1 - \frac{1}{\gamma}\left(\frac{D}{D_{max}}\right)^{1 + \alpha}\right] \times \sigma(x,y) \times \eta(x,y) \times K(x,y)
+\end{equation}\\
+$\alpha$ - allometric constant relating D to tree height\\
+$\beta$ - allometric constant relating D to crown radius\\
+$\Omega$ - conversion factor that harmonizes both sides of the equation\\
+$\gamma$ - species-specific constant related to maximum height\\
+$D_{max}$ - species-specific constant indicating maximum attainable D\\
+$\sigma(x,y)$ - response to salinity\\
+$\eta(x,y)$ - response to inundation\\
+$K(x,y)$ - response to competition from nearby mangroves\\
+
+The values of $\alpha$, $\beta$, and $\gamma$ will be species-specific but will also vary randomly among individuals of the same species. Their values will be normally distributed with a different mean for each species. The values will be inherited directly by seedlings. This will simulate fitness and spatial inheritance, as optimal values for each patch should be selected for. Spatial selection and inheritance is are important factors among organisms that do not disperse far, a category which trees certainly belong to \cite{spatialInheritance}. 
+
+We now derive from this equation a spatiotemporal stochastic process, which follows the form identified by Ojalvo \cite{ojalvoColoredNoise}:
+
+\begin{equation}
+\dot{\xi}(\boldsymbol{r},t) = \frac{-1}{\upsilon}(1 - \Lambda^2\nabla^2) \xi(\boldsymbol{r},t) + \frac{1}{\upsilon}\varphi(\boldsymbol{r},t)
+\end{equation}\\
+
+Here, $\boldsymbol{r}$ represents all of the parameters of $\xi$ other than $t$. $\upsilon$ is the \textit{temporal memory} of the process and $\Lambda$ is the correlation length. Both can be either estimated from empirical data, or guessed and varried throughout multiple simulations. The function $\varphi$ is a white noise term, which is standard in Langevin equations. Let $\boldsymbol{\xi = \frac{dD}{dt}}$ so that the \textit{fluctuations} in mangrove growth has spatiotemporal (change in growth is a spatiotemporal stochastic process).
+
+Expanding this, we get $\dot{\xi} = \frac{-1}{\upsilon}\xi + \frac{\Lambda^2}{\upsilon}\nabla^2\xi + \frac{1}{\upsilon}\varphi$. Applying the Laplacian to $\xi$, we must first obtain the first order partial derivative $\xi_x$.
+
+\begin{equation}
+\xi_x = a\sigma_x\eta K + a\sigma\eta_x K + a\sigma\eta K_x
+\end{equation}\\
+
+Here, $a$ represents the constant term in $\frac{dD}{dt}$ that is not a function of the tree's location. Note that the model assumes a static environment, so that the salinity and tidal inundation effects of a patch do not chnage over time. Furthermore, the plants themselves do not move. Thus, $\sigma_x = 0$ and $\eta_x = 0$.
+
+So equation (3) can be simplified to $\xi_x = a\sigma\eta K$. The second order partial derivative is:
+
+\begin{equation}
+\xi_{xx} = a\sigma\eta K_{xx} + a\sigma\eta_x K_x + a\sigma_x\eta K_x
+\end{equation}\\
+
+Again, the changes in $\sigma$ and $\eta$ are zero. The partial derivative with respect to $y$ takes on the same form, and together the simplified second order partial derivatives are:
+
+\begin{equation}
+\xi_{xx} = a\sigma\eta K_{xx}
+\end{equation}\\
+\begin{equation}
+\xi_{yy} = a\sigma\eta K_{yy}
+\end{equation}\\
+
+The Laplacian applied to $\xi$ yields:
+
+\begin{equation}
+\nabla^2 \xi = a\sigma\eta (K_{xx} + K_{yy}) 
+\end{equation}\\
+
+The term $K_{xx} + K_{yy}$ can be estimated using the finite difference method.
+
+\begin{equation}
+\nabla^2 \xi = K(i+1, j) - 2K(i,j) + K(i-1,j) + K(i, j+1) - 2K(i,j) + K(i,j-1)
+\end{equation}\\ 
+
+That is, the Laplacian term is dependent on the changing competition fields in and around the patch.
+
+\subsubsection{Process Overview}
+The model shall simulate the growth process (as discussed above, as stochastic). Mangrove death and recruitment (birth) is also stochastic, though the latter two are not spatiotemporally correlated.
+
+\paragraph{Scheduling}
+Salmo \& Juanico stressed the importance of stochasticity in the scheduling of their model. We will the same approach. At each step of the simulation, a random time increment $\tau$ is generated. The natural events being modeled are assumed to be Poisson processes, so the values of $\tau$ are exponentially distributed with a mean of 1 day.
+
+All mangroves grow during each step. The $D$ of each mangrove is updated by the amount of growth multiplied by the time increment for that step: $\tau \times \frac{dD}{dt}$. Growth is initially calculated deterministically. Successive growth is determined using the stochastic process discussed above.
+
+Meanwhile, at each step, plants can die based on the mortality rate for that plant's species and diameter at breast height or $D$. A randomly chosen tree, or a plant with $D >= 5.0$ (one for each species), also has a chance to recruit a seedling based on the birth rate of that species. A recruited seedling will start with $D = 0.5 cm$ and $D = 0.75$ for viviparious species of mangroves, and will disperse within an annular region around the parent. Birth rates and mortality rates will be based on configurations used by Ang \& Mariano.
+
+Storms also occur as a Poisson process. Each tree, irrespective of species, has a probability of dying equal to 70\% - $kn$, where $k$ is a parameter of the simulation and $n$ is the number of neighboring trees within the focal tree's FON (field of neighborhood). Smaller plants have a 10\% chance of dying.
+
+\subsection{Design Concepts}
+The model builds on Salmo \& Juanico's deterministic equation for growth by turning it into a stochastic process with fluctuations caused by both a white noise term and spatiotemporal colored noise. The colored noise is due to the change in the tree's neighborhood, and thus changing fields of competition. Death, storms, and recruitment all both modeled as natural Poisson processes with varying rates depending on species and maturity.
+
+\subsubsection{Emergence}
+The model should simulate the emergence of a naturally-selected population of mangroves over several generations, affected by both the fragmentation of the mangrove forest (plants are not uniformly distributed) and the properties of the plants themselves. It will thus be able take in account the effects of having multiple species and an arbitrary landscape.
+
+\subsubsection{Adaptation}
+The variations in the properties of each individual agent or plant, as well as the tendency for plants that are more fit to have more offspring will simulation spatial selection within the population. While agents will not be able to directly adapt to the environment, those who are more suited to their habitat will inevitably be selected.
+
+\subsubsection{Interaction}
+Plant agents interact with each other by competing for resources, which affects growth, and thus also influences mortality rates. The more neighbours around it a plant has, the slower it should grow, and thus the greater the chances of it dying during each step.
+
+\subsection{Simulation and Experiments}
+The goal of the model is provide insights into the growth of mangrove forests under the influence of a fragmented habitat occupied by multiple species and disturbed by storms. Monte Carlo experiments will be conducted, varying the initial mangrove distribution, initial values for $\alpha$, $\beta$, and $\gamma$ for each mangrove, and the values of $k$, $\upsilon$ and $\Lambda$. Results will be compared with experimental results obtained by Salmo \& Juanico, Ang \& Mariano, and empirical data from mangrove forests with similar configurations such as those damaged by Hurricane Andrew in the US, for which forest regrowth data is available \cite{baldwinMangroveRegeneration}.
