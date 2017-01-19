@@ -1,8 +1,7 @@
-\documentclass[14pt,letterpaper]{article}
+\documentclass[12pt,letterpaper]{article}
 \usepackage{scl-thesis-prop}
 \usepackage{amssymb,amsmath,graphicx,multicol,hyperref,rotating,lipsum}
 \usepackage[utf8]{inputenc}
-%\usepackage[T1]{fontenc}
 
 
 \title{An Agent-Based Model for Mangrove Regrowth in Multispecific Fragmented Habitats}
@@ -26,7 +25,7 @@
 
 %Abstract
 \begin{abstract}
-Mangrove forests along tropical coastlines frequently suffer severe damage due to storms. The mangrove trees themselves are extremely sensitive to environmental stressors such as water salinity and tidal inundation. We propose an agent-based model for the prediction of the regenerative behavior of mangrove stands consisting of multiple species and a fragmented habitat, with the addition of spatio-temporal colored noise for added stochasticity. 
+Mangrove forests along tropical coastlines frequently suffer severe damage due to storms. The mangrove trees themselves are extremely sensitive to environmental stressors such as water salinity and tidal inundation. We propose an agent-based model for the prediction of the regenerative behavior of mangrove stands consisting of multiple species and a fragmented habitat, with the addition of spatiotemporal colored noise for added stochasticity. 
 \end{abstract}
 
 \afterpreface
@@ -36,22 +35,26 @@ According to the National Oceanic and Atmospheric Administration (NOAA), Mangrov
 Mangrove seedlings can float and take root once it finds ground, and can disperse and grow far away from parent tree. Some species have seeds that develop while still attached to the parent plant, and break off afterwards.
 Some mangroves have been known to live for more than 100 years. Most trees will never reach this age because of various factors that could affect its growth and mortality, e.g. tidal inundation, salinity, competition between other mangroves, and the presence of storms.
 \section{Preliminaries}
-\subsection{Block Disturbance}
+\subsection{Block Disturbance and Fragmented Habitat}
 In the Block Disturbance (BD) model by Hiebeler \cite{hiebelerdisturbance}, agents are placed in an environment consisting of a lattice of tiles that individuals can occupy, and periodic disturbances which cause their death. This model can be implemented on storms (which is a Poisson process) that occur randomly to damage the mangrove populations. Every time a storm occurs, an area in 
 the mangrove forest is more heavily damaged than other areas. This randomness could be likened
 to the different paths a storm or typhoon can take while passing through the mangroves.
-
-\subsection{Fragmented Habitat}
-The Fragmented Habitat (FH) model by Hiebeler \cite{hiebelerfragmented}
-It mainly includes a long-distance dispersal feature, and restricts a part of the lattice as unsuitable for habitat (i.e. agents cannot occupy or disperse their offspring to these tiles).
+\newline\newline
+The Fragmented Habitat (FH) model by Hiebeler \cite{hiebelerfragmented} on the other hand
+mainly includes a long-distance dispersal feature, and restricts a part of the lattice as unsuitable for habitat (i.e. agents cannot occupy or disperse their offspring to these tiles).
 Its application can be seen on how mangroves disperse their seedlings, which can grow far from the parent tree. It also accounts for how some areas (e.g. highly saline water)
 are uninhabitable to mangroves as is.
 
+\subsection{Competition}
+Berger and Hildenbrandt \cite{bergermangroves} stated that competition between individuals depends on the diameter at breast height and the relative position of an individual in the patch. They introduced the term Zone of Influence (ZOI), where an individual exploits resources within a circular zone around its stemming point. Competition can cause growth depression as well as the deformation	of a tree depending on the strength of its neighbors.
+
 \subsection{Noise}
 Statistical noise is the term for recognized amounts of unexplained variation in a sample.
-Some notable examples are Gaussian noise and white noise. Noise is used to mimic the 
+Some notable examples are Gaussian noise, which is having a probability density function (PDF) equal to that of the normal distribution; and white noise, in which the values at any pair of times are identically distributed and statistically independent (and hence uncorrelated).
+ Noise is used to mimic the 
 inherent variability in nature. An addition of noise in the simulation of mangrove growth greatly
-adds to its stochasticity.
+adds to its stochasticity. Ojalvo et al. \cite{ojalvoColoredNoise} developed an algorithm to simulate
+a Gaussian stochastic process which includes a noise that obeys the Langevin equation (discussed in the Methodology).
 
 \section{Problem Statement}
 This project provides an accurate model for the population dynamics of mangrove
@@ -59,7 +62,6 @@ populations subjected to various conditions and factors. It is an improvement ov
 the project of Ang, Mariano, et al.\cite{mangrovesAngMariano}
 The paradigm used is agent-based modeling, which represents ecological units (in this case, unit
 populations of mangroves) as autonomous entities called agents.
-
 
 \section{Objectives of the Study}
 The study aims to project the growth of heterospecific mangrove populations	living in a fragmented habitat. The target use case of the model is in predicting the success or failure of mangrove restoration strategies given the type of habitat, the species that inhabit it, the species that will be planted, and locations of mangrove stands.
@@ -72,15 +74,15 @@ The study aims to project the growth of heterospecific mangrove populations	livi
 \hline
 Task Description & Date \\
 \hline
-Coding of model with stochastic growth & First and Second Week of January 2016\\
+Coding of model with stochastic growth & First to Third Week of January 2016\\
 \hline
-Addition of stochastic death and recruitment & Third Week of January 2016\\
+Addition of stochastic death and recruitment & Fourth Week of January 2016\\
 \hline
-Addition of stochastic storms & Fourth Week of January 2016\\
+Addition of stochastic storms & First Week of February 2016\\
 \hline
-Monte Carlo experiments & First Week of February 2016\\
+Monte Carlo experiments & Second and Third Week of February 2016\\
 \hline
-Compilation and results and finalization of paper & Second Week of February 2016\\
+Compilation of results and finalization of paper & March 2016\\
 \hline
 \end{tabular}
 
