@@ -10,5 +10,6 @@
 ##     2. Grow each agent
 ##     3. Let Pan kill some trees and recruit ... these are random too 
 ##     4. Let Aeolus decide whether a typhoon should occur 
+##        > Shuffle the order in which grow, pan, and aeolus do their stuff??? 
 ##     5. Update World
 ##     6. Collect data

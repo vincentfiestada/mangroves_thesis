@@ -2,14 +2,16 @@
 
 import random
 
+RANGE_OFFSET = 0.15
+
 class Mangrove:
 	"""A mangrove is an agent that continually grows based on its environmental data"""
 	def __init__(self, diameter, age, world, x, y):
 		self.diameter = float(diameter) ## Diameter at breast height in cm
 		self.age = float(age) ## Age in days
-		self.alpha = 0.95 ## Tree height allometric constant
-		self.beta = 2.00 ## Crown radius allometric constant
-		self.gamma = 1.00 ## Maximum height allometric constant
+		self.alpha = random.randrange(0.95 - RANGE_OFFSET, 0.95 + RANGE_OFFSET) ## Tree height allometric constant
+		self.beta = random.randrange(2.00 - RANGE_OFFSET, 2.00 + RANGE_OFFSET) ## Crown radius allometric constant
+		self.gamma = random.randrange(1.00 - RANGE_OFFSET, 1.00 + RANGE_OFFSET) ## Maximum height allometric constant
 		self.omega = 3.00 ## Harmonizing constant
 		self.dmax = 0.00 ## Maximum attainable diameter
 		self.buff_salinity = 0.70 ## This agent's buff against salinity effects...higher is better
