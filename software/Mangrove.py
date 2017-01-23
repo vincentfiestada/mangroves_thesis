@@ -31,7 +31,7 @@ class Mangrove:
 		growth *= self.inundationResponse()
 		growth *= self.competitionResponse()
 		self.diameter += growth * timeInterval ## Age by specified time interval
-        #self.age += timeInterval
+		self.age += timeInterval
 	def setLocation(self, world, x, y):
 		self.world = world
 		self.x = x
