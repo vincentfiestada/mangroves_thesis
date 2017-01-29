@@ -12,7 +12,7 @@ class Mangrove:
 		self.beta = random.uniform(2.00 - RANGE_OFFSET, 2.00 + RANGE_OFFSET) ## Crown radius allometric constant
 		self.gamma = random.uniform(1.00 - RANGE_OFFSET, 1.00 + RANGE_OFFSET) ## Maximum height allometric constant
 		self.omega = 3.00 ## Harmonizing constant
-		self.dmax = 100.00 ## Maximum attainable diameter
+		self.dmax = 70.00 ## Maximum attainable diameter in centimeters
 		self.buff_salinity = 0.70 ## This agent's buff against salinity effects...higher is better
 		self.buff_inundation = 0.70 ## Buff against inundation effects...higher is better
 		self.buff_competition = 1.00 ## Buff against competition effects...higher is better

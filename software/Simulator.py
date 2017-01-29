@@ -39,21 +39,21 @@ class Simulator:
         ## TODO: Plant different species of plants
         ## For now, plant trees manually
         for i in range(0, min(width, height) + 1):
-            plant = Mangrove(0.05, 0, self.world, i, i)
+            plant = Mangrove(0.5, 0, self.world, i, i)
             self.agents.append(plant)
             self.world.putAgent(i, i, plant)
         self.step = 0 ## No tree death, recruitment or storms for now
     def go(self):
         self.step += 1 ## Update step tracker
-        print "> Starting Step ", self.step
-        ## Update the world to ensure competition values are accurate
-        self.world.update()
+        print("> Starting Step ", self.step)
         ## Get time interval values, uniformly distributed from 0.1 to 1
         t = np.random.uniform(0.1, 1.0)
-        print "    Time interval", t
+        ## Update the world to ensure competition values are accurate
+        self.world.update(t)
+        print("    Time interval", t)
         ## Grow each agent/plant
         for plant in self.agents:
-            print "    D = ", plant.getDiameter()
+            print("    D = ", plant.getDiameter())
             plant.grow(t)
         ## TODO: Kill some plants
         ## TODO: Recruit new plants
@@ -65,7 +65,7 @@ class Simulator:
         if self.step % 10 == 0:
             plt.show()
 
-print "Initializing Simulator instance: 10 x 10"
+print("Initializing Simulator instance: 10 x 10")
 sim = Simulator("Test", 10, 10)
 for i in range(0,100):
     sim.go()
