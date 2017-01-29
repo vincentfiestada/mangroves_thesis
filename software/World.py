@@ -13,6 +13,8 @@ class World:
 		## 0,0 is at top left corner
 		self.width = width ## x ranges from 0 to width
 		self.height = height ## y ranges from 0 to height
+	def getName(self):
+		return self.name
 	def putAgent(self, x, y, agent):
 		## Check if x,y contains an agent already
 		location = toKey(x, y)

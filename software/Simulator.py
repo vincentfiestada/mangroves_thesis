@@ -59,11 +59,13 @@ class Simulator:
         ## TODO: Recruit new plants
         ## TODO: Check if a storm should occur and kill plants according to storm rules
         ## Show plot
-        for plant in self.agents:
-            (x,y) = plant.getLocation()
-            plt.scatter(x, y, c = 'g', s = plant.getDiameter() * 2)
         if self.step % 10 == 0:
-            plt.show()
+            plt.cla()
+            for plant in self.agents:
+                (x,y) = plant.getLocation()
+                plt.scatter(x, y, c = 'g', s = plant.getDiameter() * 2)
+            plt.grid(True)
+            plt.savefig("out/" + self.world.getName() + "_" + str(self.step) + ".png")
 
 print("Initializing Simulator instance: 10 x 10")
 sim = Simulator("Test", 10, 10)
