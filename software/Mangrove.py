@@ -9,7 +9,7 @@ class Mangrove:
 		self.diameter = float(diameter) ## Diameter at breast height in cm
 		self.age = float(age) ## Age in days
 		self.alpha = random.uniform(0.95 - RANGE_OFFSET, 0.95 + RANGE_OFFSET) ## Tree height allometric constant
-		self.beta = random.uniform(2.00 - RANGE_OFFSET, 2.00 + RANGE_OFFSET) ## Crown radius allometric constant
+		self.beta = random.uniform(2.00	 - RANGE_OFFSET, 2.00 + RANGE_OFFSET) ## Crown radius allometric constant
 		self.gamma = random.uniform(1.00 - RANGE_OFFSET, 1.00 + RANGE_OFFSET) ## Maximum height allometric constant
 		self.omega = 3.00 ## Harmonizing constant
 		self.dmax = 70.00 ## Maximum attainable diameter in centimeters
