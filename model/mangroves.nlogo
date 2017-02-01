@@ -1,10 +1,12 @@
+extensions [gis]
+
 breed [mangroves mangrove]
 
 mangroves-own [diameter age alpha beta gamma dmax buffSalinity buffInundation buffCompetition]
 
-patches-own [fertility salinity inundation recruitmentChance whiteNoise occupied]
+patches-own [fertility salinity inundation recruitmentChance whiteNoise occupied dist features]
 
-globals [deltaT]
+globals [deltaT gisDist gisFeatures trueSize resolution]
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 ;      INITIALIZATION       ;
@@ -15,6 +17,10 @@ to setup
   reset-ticks
 
   set deltaT 0.0
+
+  ; Setup map/world
+  set trueSize 750 ; For Bani map
+  set resolution trueSize / (max-pxcor + 1)
 
   setup-patches ; Setup patch values
   plant-mangroves ; Plant initial trees
@@ -49,14 +55,39 @@ end
 
 to setup-patches
   ; Set patch variables
+  init-dist
+  init-features
+  recolor-patches
   ask patches [
     set salinity 1.0 - 1.0 / (pxcor + 1)
     set inundation 1.0
-    set fertility 1
+    ifelse dist <= 0 [
+      set fertility 0
+    ][
+      set fertility 1
+    ]
     set recruitmentChance 0.0
     set whiteNoise 0.0
     set occupied False
+    set dist 0
   ]
+end
+
+to init-dist
+  ; Get GIS data for shoreline distances
+  set gisDist gis:load-dataset "bani_distance.asc"
+  gis:set-world-envelope-ds gis:envelope-of gisDist
+  gis:apply-raster gisDist dist
+  diffuse dist 0.9
+
+  ask patches [set dist (dist * resolution) ^ 1.125]
+end
+
+to init-features
+  ; Get GIS data for topographical features (elevation)
+  set gisFeatures gis:load-dataset "bani_features.asc"
+  gis:set-world-envelope-ds gis:envelope-of gisFeatures
+  gis:apply-raster gisFeatures features
 end
 
 to plant-mangroves
@@ -74,8 +105,14 @@ to plant-mangroves
     set color green
     set shape "circle"
     set size visible-size
-    setxy random-xcor random-ycor
-    ask patch-here [set occupied True]
+    let px 0
+    let py 0
+    ask one-of patches with [fertility > 0][
+      set px pxcor
+      set py pycor
+      set occupied True
+    ]
+    setxy px py
   ]
 end
 
@@ -150,6 +187,8 @@ to grow
   set growth growth * salinity-response / buffSalinity
   set growth growth * inundation-response / buffInundation
   set growth growth * competition-response / buffCompetition
+  print "Growth::"
+  print growth
   set diameter diameter + growth * deltaT
   if diameter < 0 [
     print "A mangrove died"
@@ -163,7 +202,7 @@ to grow
     stop
   ]
   set age age + deltaT
-  set size visible-size
+  set size visible-size ; Redraw tree based on its new size
   ; Update recruitment chance at this patch
   ifelse diameter >= 5.0 [ ; Mature tree here
     set recruitmentChance 1.0
@@ -171,6 +210,7 @@ to grow
   [ ; Underage tree here
     set recruitmentChance 0.0
   ]
+  recolor-mangrove
   print diameter
 end
 
@@ -235,28 +275,47 @@ end
 
 to-report visible-size
   ; Get size to draw trees as
-  report crown-radius / 750 * (max-pxcor + 1)
+  report (crown-radius / resolution) / 25 * mangrove-display-scale
 end
 
-
-; recolor mangroves
-
-to recolor-mangroves
-  ; Recolor mangroves with different ages
+to recolor-mangrove
+  ; Recolor a mangrove based on its age
   let tree-color green
-  ask mangroves with [ diameter < 2.5 ] [ set color tree-color + 2 ]
-  ask mangroves with [ diameter < 5.0 and diameter >= 2.5 ] [set color tree-color ]
-  ask mangroves with [ diameter >= 5.0 ] [set color tree-color - 2]
+  ifelse diameter < 2.5 [
+    set color tree-color + 1.5
+  ][
+    ifelse diameter < 5.0 [
+      set color tree-color
+    ][
+      set color tree-color - 2
+    ]
+  ]
+end
+
+; Color terrain
+
+to recolor-patches
+  ask patches [
+    ifelse dist > 0 [
+      ifelse features = 1 [
+        set pcolor gray
+      ] [
+        set pcolor scale-color orange dist 240 -140
+      ]
+    ] [
+      set pcolor blue
+    ]
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-11
-19
-313
-342
+8
+25
+483
+521
 -1
 -1
-13.905
+9.32
 1
 12
 1
@@ -267,9 +326,9 @@ GRAPHICS-WINDOW
 0
 1
 0
-20
+49
 0
-20
+49
 0
 0
 1
@@ -277,21 +336,21 @@ steps
 30.0
 
 INPUTBOX
-334
-22
-489
-82
+502
+24
+657
+84
 initial-population
-70
+170
 1
 0
 Number
 
 INPUTBOX
-334
-97
-489
-157
+502
+99
+657
+159
 omega
 1.5
 1
@@ -299,10 +358,10 @@ omega
 Number
 
 INPUTBOX
-334
-172
-489
-232
+502
+174
+657
+234
 range-offset
 1.5
 1
@@ -310,10 +369,10 @@ range-offset
 Number
 
 BUTTON
-338
-254
-402
-287
+505
+256
+569
+289
 Setup
 setup
 NIL
@@ -327,10 +386,10 @@ NIL
 1
 
 BUTTON
-424
-254
-487
-287
+592
+256
+655
+289
 Go
 simulate
 T
@@ -344,10 +403,10 @@ NIL
 1
 
 INPUTBOX
-514
-21
-669
-81
+682
+23
+837
+83
 max-steps
 100
 1
@@ -355,10 +414,10 @@ max-steps
 Number
 
 INPUTBOX
-515
-97
-670
-157
+683
+99
+838
+159
 correlation-time
 1
 1
@@ -366,15 +425,30 @@ correlation-time
 Number
 
 INPUTBOX
-515
-172
-671
-232
+683
+174
+839
+234
 diffusion-rate
 1
 1
 0
 Number
+
+SLIDER
+685
+254
+858
+287
+mangrove-display-scale
+mangrove-display-scale
+1
+20
+9
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 # Mangroves Thesis
