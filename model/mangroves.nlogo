@@ -59,8 +59,11 @@ to setup-patches
   init-features
   recolor-patches
   ask patches [
-    set salinity 1.0 - 1.0 / (pxcor + 1)
-    set inundation 1.0
+    ; Assume shore-dist is 150
+    set salinity min list (0.48 * (150 - dist)) 72
+    set salinity (1 + e ^ ((salinity - 72) / 4)) ^ -1
+    set inundation min list (0.00533 * (150 - dist)) 1
+    set inundation 1 - inundation
     ifelse dist <= 0 [
       set fertility 0
     ][
@@ -69,7 +72,6 @@ to setup-patches
     set recruitmentChance 0.0
     set whiteNoise 0.0
     set occupied False
-    set dist 0
   ]
 end
 
@@ -107,7 +109,7 @@ to plant-mangroves
     set size visible-size
     let px 0
     let py 0
-    ask one-of patches with [fertility > 0][
+    ask one-of patches with [fertility > 0 and occupied = False][
       set px pxcor
       set py pycor
       set occupied True
@@ -239,18 +241,18 @@ to-report inundation-response
 end
 
 to-report competition-response
-  let comp-total 1
+  let compTotal 1
   ask turtles-here [
     let comp-here e ^ (-0.1 * diameter / 2)
-    set comp-total comp-total * comp-here
+    set compTotal compTotal * comp-here
   ]
   ask neighbors [
     ask turtles-at pxcor pycor [
       let comp-here e ^ (-0.1 * diameter / 2)
-      set comp-total comp-total * comp-here
+      set compTotal compTotal * comp-here
     ]
   ]
-  report comp-total
+  report compTotal
 end
 
 to-report chance-of-dying
@@ -307,12 +309,29 @@ to recolor-patches
     ]
   ]
 end
+
+; Color patches based on salinity
+
+to recolor-patches-by-salinity
+  ask patches [
+    set pcolor scale-color magenta (salinity * 200) -250 550
+  ]
+end
+
+
+; Color patches based on salinity
+
+to recolor-patches-by-inundation
+  ask patches [
+    set pcolor scale-color sky (inundation * 200) -250 550
+  ]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-8
-25
-483
-521
+9
+13
+484
+509
 -1
 -1
 9.32
@@ -373,7 +392,7 @@ BUTTON
 256
 569
 289
-Setup
+Reset
 setup
 NIL
 1
@@ -438,17 +457,68 @@ Number
 SLIDER
 685
 254
-858
+840
 287
 mangrove-display-scale
 mangrove-display-scale
 1
 20
-9
+10
 1
 1
 NIL
 HORIZONTAL
+
+BUTTON
+504
+319
+604
+352
+Terrain View
+recolor-patches
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+621
+319
+721
+352
+Salinity View
+recolor-patches-by-salinity
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+740
+319
+860
+352
+Inundation View
+recolor-patches-by-inundation
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 # Mangroves Thesis
