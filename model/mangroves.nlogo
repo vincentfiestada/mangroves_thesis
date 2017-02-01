@@ -42,7 +42,7 @@ to simulate
   update-recruitment-chance
   ; Grow each agent
   ask mangroves [grow]
-  ; TODO: Kill plants
+  ask mangroves [reap-soul]
   ; TODO: Recruit plants
   ; TODO: Trigger storms
 
@@ -256,11 +256,31 @@ to-report competition-response
 end
 
 to-report chance-of-dying
-
+  ; Determine chance of a plant dying based on species and diameter
+  ; TODO: Discriminate based on species (use is-<breed> )
+  ; Native Mortality Rate
+  ; ---------------------------
+  ; Diameter   |   Mortality  |
+  ; ---------------------------
+  ; 0.5 cm     |   0.2
+  ; 2.5 cm     |   0.1
+  ; 5.0 cm     |   0.083
+  ; ---------------------------
+  ; Use Lagrange Interpolation
+  let x diameter
+  let p 0.2 * (((x - 2.5) * (x - 5.0))/((0.5 - 2.5) * (0.5 - 5.0)))
+  set p p + 0.1 * (((x - 0.5) * (x - 5.))/((2.5 - 0.5) * (2.5 - 5.0)))
+  set p p + 0.083 * (((x - 0.5) * (x - 2.5))/((5.0 - 0.5) * (5.0 - 2.5)))
+  report min list p 1
 end
 
-to reap-souls
-  ; TODO: Kill some plants
+to reap-soul
+  ; Randomly kill a plant
+  let roll random-float 1.0
+  let probOfDeath chance-of-dying
+  if roll <= probOfDeath [
+    kill-tree-here
+  ]
 end
 
 to plant-babies
