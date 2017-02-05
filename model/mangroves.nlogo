@@ -4,9 +4,9 @@ breed [mangroves mangrove]
 
 mangroves-own [diameter age alpha beta gamma dmax buffSalinity buffInundation buffCompetition]
 
-patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features]
+patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features bigPatch]
 
-globals [deltaT gisDist gisFeatures trueSize resolution dynamicViewOn days]
+globals [deltaT gisDist gisFeatures trueSize resolution dynamicViewOn days nextStorm stormOccurred]
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 ;      INITIALIZATION       ;
@@ -18,6 +18,8 @@ to setup
 
   set days 0
   set deltaT 0.0
+  set nextStorm next-storm-schedule
+  set stormOccurred False
 
   ; Setup map/world
   set trueSize 750 ; For Bani map
@@ -41,6 +43,8 @@ to simulate
   if ticks >= max-steps [stop] ; Stop if maximum desired steps has been reached
 
   set deltaT random-float 2 ; Get random time increment
+  set days days + deltaT ; Update days
+  set stormOccurred False
 
   ; Recolor patches if recruitment chance view is on
   if dynamicViewOn = True [
@@ -51,10 +55,18 @@ to simulate
   update-recruitment-chance ; Update recruitment chances for patches
   ; Grow each agent
   ask mangroves [grow]
-  ask mangroves [reap-soul]
-  ask patches [plant-baby]
-  ; TODO: Trigger storms
-  set days days + deltaT
+  ask mangroves [reap-soul] ; Kill some mangroves at random (from natural causes)
+
+  ; If scheduled, make storm occur
+  if days >= nextStorm [
+    print "Storm"
+    storm
+    set nextStorm next-storm-schedule
+    set stormOccurred True
+  ]
+
+  ask patches [plant-baby] ; Make mangrove babies
+
   tick
 end
 
@@ -83,7 +95,29 @@ to setup-patches
     set whiteNoise 0.0
     set occupied False
   ]
+  init-big-patches
 end
+
+to init-big-patches
+  ; first compute bigpatch once for each region's left bottom patch
+  let patchGroup 0
+  foreach n-values 5 [? * 10]
+  [ let xx ?
+    foreach n-values 5 [? * 10]
+    [ let yy ?
+      ask patch xx yy
+      [ let bigSet patches with [pxcor >= xx and pxcor < xx + 10
+                                   and pycor >= yy and pycor < yy + 10]
+        ask bigSet [set bigPatch patchGroup]
+        ;set patch-group patch-group ; + 1  ; incr region color
+        ; now propogate big-set to whole region and color it
+        ;set bigpatch big-set  set pcolor patch-group ]
+        set patchGroup patchGroup + 1  ; incr region color
+      ]
+    ]
+  ]
+end
+
 
 to init-dist
   ; Get GIS data for shoreline distances
@@ -169,7 +203,7 @@ to update-recruitment-chance
     let inv-corr -1 / correlation-time
     let diff-over-corr diffusion-rate * inv-corr
     set recruitmentChance recruitmentChance + deltaT * (inv-corr * recruitmentChance - diff-over-corr * (recruitment-chance-xx pxcor pycor) - diff-over-corr * (recruitment-chance-yy pxcor pycor) - inv-corr * whiteNoise )
-    if count mangroves-here with [diameter >= 5.0] > 0 [
+    if count mangroves-here with [diameter >= 10.0] > 0 [
       set recruitmentChance 1
     ]
     if recruitmentChance < 0 [
@@ -316,7 +350,7 @@ to plant-baby
   ]
   let roll random-float 1
   ; Plant  new mangrove based on recruitmentChance
-  if roll <= recruitmentChance or recruitmentChance >= 1.0 [
+  if roll < recruitmentChance or recruitmentChance >= 1.0 [
     ; TODO: Ask for neighbors to determine parent
     sprout-mangroves 1 [
       init-natural False
@@ -326,8 +360,31 @@ to plant-baby
   ]
 end
 
-to make-storm
-  ; TODO: Make storm happen
+
+to storm
+
+  ask mangroves [
+    let numNeighbors count mangroves in-radius 0 with [diameter > [diameter] of myself] ; Get number of neighbors
+    let stormVulnerability 0.0
+    ifelse diameter > 10 [
+      set stormVulnerability 0.7 - (numNeighbors * tree-protect)
+    ][
+      set stormVulnerability 0.1 - (numNeighbors * tree-protect)
+    ]
+    if random-float 1.0 < stormVulnerability [
+      ask patch-here [
+        kill-tree-here
+      ]
+    ]
+  ]
+
+  let blockDisturb random 25
+
+  ;print "Block Disturb"
+  ;print blockDisturb
+  ask patches with [ bigPatch = blockDisturb] [
+    kill-tree-here
+  ]
 end
 
 to-report crown-radius
@@ -337,6 +394,11 @@ end
 to-report visible-size
   ; Get size to draw trees as
   report (crown-radius / resolution) / 25 * mangrove-display-scale
+end
+
+to-report next-storm-schedule
+  ; Get next storm schedule (in simulated days)
+  report days + random-exponential storm-beta
 end
 
 to recolor-mangrove
@@ -400,12 +462,21 @@ to recolor-patches-by-recruitment
   ]
   set dynamicViewOn True
 end
+
+; Color patches based on local region/bigPatch
+
+to recolor-big-patches
+  ask patches [
+    set pcolor scale-color violet (bigPatch * 10) 500 -500
+  ]
+  set dynamicViewOn False
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 9
 13
-484
-509
+485
+510
 -1
 -1
 9.32
@@ -434,7 +505,7 @@ INPUTBOX
 657
 84
 initial-population
-300
+2
 1
 0
 Number
@@ -501,7 +572,7 @@ INPUTBOX
 837
 83
 max-steps
-500
+1000
 1
 0
 Number
@@ -523,16 +594,16 @@ INPUTBOX
 839
 234
 diffusion-rate
-0.5
+1
 1
 0
 Number
 
 SLIDER
-685
-257
-840
-290
+1022
+470
+1177
+503
 mangrove-display-scale
 mangrove-display-scale
 1
@@ -612,10 +683,10 @@ NIL
 1
 
 MONITOR
-867
-22
-1006
-87
+870
+17
+1000
+82
 Days Simulated
 days
 2
@@ -623,10 +694,10 @@ days
 16
 
 PLOT
-891
-113
-1283
-438
+869
+105
+1309
+456
 Population
 Days
 Mangroves
@@ -638,7 +709,62 @@ true
 true
 "" ""
 PENS
-"Mangroves" 2.0 0 -12087248 true "" "plot count mangroves"
+"Mangroves" 5.0 0 -12087248 true "" "plot count mangroves"
+"Storms" 1.0 0 -2674135 true "" "plot 0\nif stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+
+SLIDER
+870
+470
+1010
+503
+tree-protect
+tree-protect
+0
+0.1
+0.01
+0.005
+1
+NIL
+HORIZONTAL
+
+INPUTBOX
+683
+247
+838
+307
+storm-beta
+500
+1
+0
+Number
+
+MONITOR
+1010
+17
+1166
+62
+Next Storm Scheduled at
+nextStorm
+2
+1
+11
+
+BUTTON
+688
+370
+799
+403
+Big Patch View
+recolor-big-patches
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 # Mangroves Thesis
@@ -651,7 +777,7 @@ This is an agent-based model for the regrowth of multi-species mangrove forests 
 
 The model is being re-written, using code from the previous version as well as new features such as using colored noise for population spread.
 
-**CURRENT VERSION:** Single species, small genetic "island" map, uniform topography
+**CURRENT VERSION:** Single species, small genetic "island" map, land gets more elevated farther from the shore, storms are Poisson events
 
 ## Mangrove Variables
 
@@ -664,6 +790,11 @@ The model is being re-written, using code from the previous version as well as n
 - inundation: Tidal inundation effect on this patch
 - recruitmentChance: Probability (0-1) that this patch will grow a new seedling
 - whiteNoise: Current white noise term for recruitmentChance of this patch
+- bigPatch: Identifies a local group/region that the patch belongs to. Used in block disturbance.
+
+## Global Variables
+
+- nextStorm: schedule for when the next storm hits. It is calculated as a sample from an Exponential distribution (since storms are assumed to Poisson events)
 
 ## Units
 
