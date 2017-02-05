@@ -6,7 +6,7 @@ mangroves-own [diameter age alpha beta gamma dmax buffSalinity buffInundation bu
 
 patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features bigPatch]
 
-globals [deltaT gisDist gisFeatures trueSize resolution dynamicViewOn days nextStorm stormOccurred]
+globals [deltaT gisDist gisFeatures trueSize resolution dynamicView days nextStorm stormOccurred stormKilled]
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 ;      INITIALIZATION       ;
@@ -31,7 +31,7 @@ to setup
   ; Some additional setup
   set-default-shape mangroves "circle"
 
-  set dynamicViewOn False
+  set dynamicView 0
 end
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
@@ -42,13 +42,18 @@ to simulate
   ;if not any? mangroves [stop] ; If all mangroves are dead, stop
   if ticks >= max-steps [stop] ; Stop if maximum desired steps has been reached
 
-  set deltaT random-float 2 ; Get random time increment
+  set deltaT random-float 0.5 ; Get random time increment
+  set deltaT deltaT + 0.5
   set days days + deltaT ; Update days
   set stormOccurred False
 
   ; Recolor patches if recruitment chance view is on
-  if dynamicViewOn = True [
+  if dynamicView = 1 [
     recolor-patches-by-recruitment
+  ]
+  if dynamicView = 2 [
+    recolor-patches
+    recolor-patches-by-mortality
   ]
   update-white-noise ; Update white noise term
   preserve-chances; Save old probabilities so calculation of new chances is uniform
@@ -59,13 +64,12 @@ to simulate
 
   ; If scheduled, make storm occur
   if days >= nextStorm [
-    print "Storm"
     storm
     set nextStorm next-storm-schedule
     set stormOccurred True
   ]
 
-  ask patches [plant-baby] ; Make mangrove babies
+  ask patches with [fertility > 0 and recruitmentChance > 0] [plant-baby] ; Make mangrove babies
 
   tick
 end
@@ -149,7 +153,7 @@ to init-natural [move]
   set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
   set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
   set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
-  set dmax 100.0
+  set dmax 70
   set buffSalinity 0.70
   set buffInundation 0.70
   set buffCompetition 1.70
@@ -203,15 +207,12 @@ to update-recruitment-chance
     let inv-corr -1 / correlation-time
     let diff-over-corr diffusion-rate * inv-corr
     set recruitmentChance recruitmentChance + deltaT * (inv-corr * recruitmentChance - diff-over-corr * (recruitment-chance-xx pxcor pycor) - diff-over-corr * (recruitment-chance-yy pxcor pycor) - inv-corr * whiteNoise )
-    if count mangroves-here with [diameter >= 10.0] > 0 [
-      set recruitmentChance 1
-    ]
     if recruitmentChance < 0 [
       set recruitmentChance 0
     ]
-    ;if recruitmentChance >= 1 [
-    ;  set recruitmentChance 1
-    ;]
+    if recruitmentChance >= 1 [
+      set recruitmentChance 0.8
+    ]
   ]
 end
 
@@ -254,21 +255,17 @@ to grow
   set growth growth * salinity-response / buffSalinity
   set growth growth * inundation-response / buffInundation
   set growth growth * competition-response / buffCompetition
-  set diameter diameter + growth * deltaT
-  if diameter <= 0 [
+  set growth growth * deltaT
+  set diameter diameter + growth
+  if diameter <= 0 or diameter > 100 [
     ask patch-here [kill-tree-here]
     stop
   ]
-  ;if diameter > dmax [
-    ;print "A tree died from being too big: diameter = "
-   ; ask patch-here [kill-tree-here]
-  ;  stop
-  ;]
   set age age + deltaT
   set size visible-size ; Redraw tree based on its new size
   ; Update recruitment chance at this patch
-  ifelse diameter >= 5.0 [ ; Mature tree here
-    set recruitmentChance 1.0
+  ifelse diameter >= 5 [ ; Mature tree here
+    set recruitmentChance 0.25
   ]
   [ ; Underage tree here
     set recruitmentChance 0.0
@@ -306,8 +303,8 @@ to-report competition-response
     let comp-here e ^ (-0.1 * diameter / 2)
     set compTotal compTotal * comp-here
   ]
-  ask neighbors [
-    ask turtles-at pxcor pycor [
+  ask mangroves in-radius 3 [
+    ask mangroves-at pxcor pycor [
       let comp-here e ^ (-0.1 * diameter / 2)
       set compTotal compTotal * comp-here
     ]
@@ -317,21 +314,14 @@ end
 
 to-report chance-of-dying
   ; Determine chance of a plant dying based on species and diameter
-  ; TODO: Discriminate based on species (use is-<breed> )
-  ; Native Mortality Rate
-  ; ---------------------------
-  ; Diameter   |   Mortality  |
-  ; ---------------------------
-  ; 0.5 cm     |   0.2
-  ; 2.5 cm     |   0.1
-  ; 5.0 cm     |   0.083
-  ; ---------------------------
-  ; Use Lagrange Interpolation
   let x diameter
   let p 0.2 * (((x - 2.5) * (x - 5.0))/((0.5 - 2.5) * (0.5 - 5.0)))
-  set p p + 0.1 * (((x - 0.5) * (x - 5.))/((2.5 - 0.5) * (2.5 - 5.0)))
+  set p p + 0.1 * (((x - 0.5) * (x - 5))/((2.5 - 0.5) * (2.5 - 5.0)))
   set p p + 0.083 * (((x - 0.5) * (x - 2.5))/((5.0 - 0.5) * (5.0 - 2.5)))
-  report min list p 1
+  if x >= 5 [
+    set p 0.083
+  ]
+  report p
 end
 
 to reap-soul
@@ -363,28 +353,37 @@ end
 
 to storm
 
+  set stormKilled 0
+
   ask mangroves [
-    let numNeighbors count mangroves in-radius 0 with [diameter > [diameter] of myself] ; Get number of neighbors
+    let numNeighbors count mangroves in-radius 3 with [diameter > [diameter] of myself] ; Get number of neighbors
     let stormVulnerability 0.0
-    ifelse diameter > 10 [
+    ifelse diameter >= 5 [
       set stormVulnerability 0.7 - (numNeighbors * tree-protect)
     ][
       set stormVulnerability 0.1 - (numNeighbors * tree-protect)
     ]
-    if random-float 1.0 < stormVulnerability [
+    if random-float 1.0 <= stormVulnerability [
       ask patch-here [
         kill-tree-here
+        set stormKilled stormKilled + 1
+      ]
+      ask patches in-radius 10 [
+        kill-tree-here
+        set stormKilled stormKilled + 1
       ]
     ]
   ]
 
+  print stormKilled
   let blockDisturb random 25
 
   ;print "Block Disturb"
   ;print blockDisturb
-  ask patches with [ bigPatch = blockDisturb] [
-    kill-tree-here
-  ]
+  ;ask patches with [ bigPatch = blockDisturb] [
+  ;  kill-tree-here
+  ;  set stormKilled stormKilled + 1
+  ;]
 end
 
 to-report crown-radius
@@ -437,7 +436,7 @@ to recolor-patches-by-salinity
   ask patches [
     set pcolor scale-color magenta (salinity * 200) -250 550
   ]
-  set dynamicViewOn False
+  set dynamicView 0
 end
 
 
@@ -447,7 +446,7 @@ to recolor-patches-by-inundation
   ask patches [
     set pcolor scale-color sky (inundation * 200) -250 550
   ]
-  set dynamicViewOn False
+  set dynamicView 0
 end
 
 ; Color patches based on recruitment chance
@@ -460,7 +459,7 @@ to recolor-patches-by-recruitment
       set pcolor scale-color red (recruitmentChance * 200) 500 -200
     ]
   ]
-  set dynamicViewOn True
+  set dynamicView 1
 end
 
 ; Color patches based on local region/bigPatch
@@ -469,7 +468,23 @@ to recolor-big-patches
   ask patches [
     set pcolor scale-color violet (bigPatch * 10) 500 -500
   ]
-  set dynamicViewOn False
+  set dynamicView 0
+end
+
+; Color patches based on chance of dying
+
+to recolor-patches-by-mortality
+  ask patches with [count turtles-here > 0][
+    let mort 0
+    ask one-of mangroves-here [
+      set mort chance-of-dying
+    ]
+    set pcolor scale-color turquoise (mort * 500) 250 -250
+    if mort <= 0.08 [
+      set pcolor blue
+    ]
+  ]
+  set dynamicView 2
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -497,7 +512,7 @@ GRAPHICS-WINDOW
 1
 1
 steps
-45.0
+60.0
 
 INPUTBOX
 502
@@ -505,7 +520,7 @@ INPUTBOX
 657
 84
 initial-population
-2
+200
 1
 0
 Number
@@ -516,7 +531,7 @@ INPUTBOX
 657
 159
 omega
-3
+100
 1
 0
 Number
@@ -527,16 +542,16 @@ INPUTBOX
 657
 234
 range-offset
-1.5
+30
 1
 0
 Number
 
 BUTTON
-505
-256
-569
-289
+504
+255
+568
+288
 Reset
 setup
 NIL
@@ -594,7 +609,7 @@ INPUTBOX
 839
 234
 diffusion-rate
-1
+0.1
 1
 0
 Number
@@ -608,7 +623,7 @@ mangrove-display-scale
 mangrove-display-scale
 1
 20
-11
+6
 1
 1
 NIL
@@ -620,7 +635,7 @@ BUTTON
 604
 352
 Terrain View
-recolor-patches\nset dynamicViewOn False
+recolor-patches\nset dynamicView False
 NIL
 1
 T
@@ -668,7 +683,7 @@ NIL
 BUTTON
 504
 370
-676
+639
 403
 Recruitment Chance View
 recolor-patches-by-recruitment
@@ -694,22 +709,22 @@ days
 16
 
 PLOT
-869
-105
-1309
-456
+870
+92
+1322
+460
 Population
 Days
 Mangroves
 0.0
-300.0
+100.0
 0.0
-300.0
+100.0
 true
 true
 "" ""
 PENS
-"Mangroves" 5.0 0 -12087248 true "" "plot count mangroves"
+"Mangroves" 1.0 0 -12087248 true "" "plot count mangroves"
 "Storms" 1.0 0 -2674135 true "" "plot 0\nif stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 
 SLIDER
@@ -721,7 +736,7 @@ tree-protect
 tree-protect
 0
 0.1
-0.01
+0
 0.005
 1
 NIL
@@ -733,7 +748,7 @@ INPUTBOX
 838
 307
 storm-beta
-500
+150
 1
 0
 Number
@@ -750,12 +765,29 @@ nextStorm
 11
 
 BUTTON
-688
+649
 370
-799
+739
 403
 Big Patch View
 recolor-big-patches
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+BUTTON
+747
+369
+856
+402
+Mortality View
+recolor-patches-by-mortality
 NIL
 1
 T
