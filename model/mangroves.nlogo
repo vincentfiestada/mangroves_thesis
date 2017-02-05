@@ -4,9 +4,9 @@ breed [mangroves mangrove]
 
 mangroves-own [diameter age alpha beta gamma dmax buffSalinity buffInundation buffCompetition]
 
-patches-own [fertility salinity inundation recruitmentChance whiteNoise occupied dist features]
+patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features]
 
-globals [deltaT gisDist gisFeatures trueSize resolution]
+globals [deltaT gisDist gisFeatures trueSize resolution dynamicViewOn days]
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 ;      INITIALIZATION       ;
@@ -16,6 +16,7 @@ to setup
   clear-all
   reset-ticks
 
+  set days 0
   set deltaT 0.0
 
   ; Setup map/world
@@ -27,6 +28,8 @@ to setup
 
   ; Some additional setup
   set-default-shape mangroves "circle"
+
+  set dynamicViewOn False
 end
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
@@ -34,18 +37,24 @@ end
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 
 to simulate
-  if not any? mangroves [stop] ; If all mangroves are dead, stop
+  ;if not any? mangroves [stop] ; If all mangroves are dead, stop
   if ticks >= max-steps [stop] ; Stop if maximum desired steps has been reached
 
-  set deltaT random-float 1 ; Get random time increment
+  set deltaT random-float 2 ; Get random time increment
+
+  ; Recolor patches if recruitment chance view is on
+  if dynamicViewOn = True [
+    recolor-patches-by-recruitment
+  ]
   update-white-noise ; Update white noise term
-  update-recruitment-chance
+  preserve-chances; Save old probabilities so calculation of new chances is uniform
+  update-recruitment-chance ; Update recruitment chances for patches
   ; Grow each agent
   ask mangroves [grow]
   ask mangroves [reap-soul]
-  ; TODO: Recruit plants
+  ask patches [plant-baby]
   ; TODO: Trigger storms
-
+  set days days + deltaT
   tick
 end
 
@@ -70,6 +79,7 @@ to setup-patches
       set fertility 1
     ]
     set recruitmentChance 0.0
+    set oldRC 0.0
     set whiteNoise 0.0
     set occupied False
   ]
@@ -95,20 +105,26 @@ end
 to plant-mangroves
   ; Plant mangroves
   create-mangroves initial-population [
-    set diameter 0.5
-    set age 0.0
-    set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
-    set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
-    set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
-    set dmax 100.0
-    set buffSalinity 0.70
-    set buffInundation 0.70
-    set buffCompetition 1.70
-    set color green
-    set shape "circle"
-    set size visible-size
-    let px 0
-    let py 0
+    init-natural True
+  ]
+end
+
+to init-natural [move]
+  set diameter 0.5
+  set age 0.0
+  set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
+  set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
+  set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
+  set dmax 100.0
+  set buffSalinity 0.70
+  set buffInundation 0.70
+  set buffCompetition 1.70
+  set color green
+  set shape "circle"
+  set size visible-size
+  let px 0
+  let py 0
+  if move = True [
     ask one-of patches with [fertility > 0 and occupied = False][
       set px pxcor
       set py pycor
@@ -127,14 +143,20 @@ to update-white-noise
   ]
 end
 
+to preserve-chances
+  ask patches [
+    set oldRC recruitmentChance
+  ]
+end
+
 to update-recruitment-chance
   ; Update chance of recruitment for each patch
   ask patches [
     ; Implement Forced rules
     ; ______________________
     ; A. Assume plants cannot grow on boundaries
-    if pxcor <= min-pxcor [
-      set recruitmentChance 0.0
+    if pxcor <= min-pxcor or fertility < 1 [
+      set recruitmentChance 0
       stop ; End function here
     ]
     ; ______________________
@@ -147,6 +169,15 @@ to update-recruitment-chance
     let inv-corr -1 / correlation-time
     let diff-over-corr diffusion-rate * inv-corr
     set recruitmentChance recruitmentChance + deltaT * (inv-corr * recruitmentChance - diff-over-corr * (recruitment-chance-xx pxcor pycor) - diff-over-corr * (recruitment-chance-yy pxcor pycor) - inv-corr * whiteNoise )
+    if count mangroves-here with [diameter >= 5.0] > 0 [
+      set recruitmentChance 1
+    ]
+    if recruitmentChance < 0 [
+      set recruitmentChance 0
+    ]
+    ;if recruitmentChance >= 1 [
+    ;  set recruitmentChance 1
+    ;]
   ]
 end
 
@@ -160,7 +191,7 @@ to-report recruitment-chance-xx [x y]
   ; Default option: report 2nd-order finite difference approximation
   let xnext x + 1
   let xprev x - 1
-  report ((recruitment-chance-at xnext y ) - 2 * (recruitment-chance-at x y) + (recruitment-chance-at xprev y)) / (deltaT ^ 2)
+  report ((recruitment-chance-at xnext y ) - 2 * (recruitment-chance-at x y) + (recruitment-chance-at xprev y)) / 225
 end
 
 to-report recruitment-chance-yy [x y]
@@ -173,13 +204,13 @@ to-report recruitment-chance-yy [x y]
   ; Default option: report 2nd-order finite difference approximation
   let ynext y + 1
   let yprev y - 1
-  report ((recruitment-chance-at x ynext ) - 2 * (recruitment-chance-at x y) + (recruitment-chance-at x yprev)) / (deltaT ^ 2)
+  report ((recruitment-chance-at x ynext ) - 2 * (recruitment-chance-at x y) + (recruitment-chance-at x yprev)) / 225
 end
 
 to-report recruitment-chance-at [x y]
   let r 0.0
   ask patch x y [
-    set r recruitmentChance
+    set r oldRC
   ]
   report r
 end
@@ -189,20 +220,16 @@ to grow
   set growth growth * salinity-response / buffSalinity
   set growth growth * inundation-response / buffInundation
   set growth growth * competition-response / buffCompetition
-  print "Growth::"
-  print growth
   set diameter diameter + growth * deltaT
-  if diameter < 0 [
-    print "A mangrove died"
+  if diameter <= 0 [
     ask patch-here [kill-tree-here]
     stop
   ]
-  if diameter > dmax [
-    print "A tree died from being too big: diameter = "
-    print diameter
-    ask patch-here [kill-tree-here]
-    stop
-  ]
+  ;if diameter > dmax [
+    ;print "A tree died from being too big: diameter = "
+   ; ask patch-here [kill-tree-here]
+  ;  stop
+  ;]
   set age age + deltaT
   set size visible-size ; Redraw tree based on its new size
   ; Update recruitment chance at this patch
@@ -213,7 +240,6 @@ to grow
     set recruitmentChance 0.0
   ]
   recolor-mangrove
-  print diameter
 end
 
 to-report salinity-response
@@ -229,7 +255,7 @@ to kill-tree-here
     die
   ]
   set occupied False
-  set recruitmentChance 0.0
+  set recruitmentChance 0
 end
 
 to-report inundation-response
@@ -283,8 +309,21 @@ to reap-soul
   ]
 end
 
-to plant-babies
-  ; TODO: Plant new mangroves based on recruitmentChance of each patch
+to plant-baby
+  ; Make sure patch is fertile and not occupied
+  if fertility < 1 or count mangroves-here > 0 [
+    stop
+  ]
+  let roll random-float 1
+  ; Plant  new mangrove based on recruitmentChance
+  if roll <= recruitmentChance or recruitmentChance >= 1.0 [
+    ; TODO: Ask for neighbors to determine parent
+    sprout-mangroves 1 [
+      init-natural False
+      setxy pxcor pycor
+      set occupied True
+    ]
+  ]
 end
 
 to make-storm
@@ -309,7 +348,7 @@ to recolor-mangrove
     ifelse diameter < 5.0 [
       set color tree-color
     ][
-      set color tree-color - 2
+      set color tree-color - 2.5
     ]
   ]
 end
@@ -336,6 +375,7 @@ to recolor-patches-by-salinity
   ask patches [
     set pcolor scale-color magenta (salinity * 200) -250 550
   ]
+  set dynamicViewOn False
 end
 
 
@@ -345,6 +385,20 @@ to recolor-patches-by-inundation
   ask patches [
     set pcolor scale-color sky (inundation * 200) -250 550
   ]
+  set dynamicViewOn False
+end
+
+; Color patches based on recruitment chance
+
+to recolor-patches-by-recruitment
+  ask patches [
+    ifelse recruitmentChance >= 1 [
+      set pcolor cyan
+    ][
+      set pcolor scale-color red (recruitmentChance * 200) 500 -200
+    ]
+  ]
+  set dynamicViewOn True
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -368,11 +422,11 @@ GRAPHICS-WINDOW
 49
 0
 49
-0
-0
+1
+1
 1
 steps
-30.0
+45.0
 
 INPUTBOX
 502
@@ -380,7 +434,7 @@ INPUTBOX
 657
 84
 initial-population
-170
+300
 1
 0
 Number
@@ -391,7 +445,7 @@ INPUTBOX
 657
 159
 omega
-1.5
+3
 1
 0
 Number
@@ -447,7 +501,7 @@ INPUTBOX
 837
 83
 max-steps
-100
+500
 1
 0
 Number
@@ -469,21 +523,21 @@ INPUTBOX
 839
 234
 diffusion-rate
-1
+0.5
 1
 0
 Number
 
 SLIDER
 685
-254
+257
 840
-287
+290
 mangrove-display-scale
 mangrove-display-scale
 1
 20
-10
+11
 1
 1
 NIL
@@ -495,7 +549,7 @@ BUTTON
 604
 352
 Terrain View
-recolor-patches
+recolor-patches\nset dynamicViewOn False
 NIL
 1
 T
@@ -525,9 +579,9 @@ NIL
 
 BUTTON
 740
-319
+318
 860
-352
+351
 Inundation View
 recolor-patches-by-inundation
 NIL
@@ -539,6 +593,52 @@ NIL
 NIL
 NIL
 1
+
+BUTTON
+504
+370
+676
+403
+Recruitment Chance View
+recolor-patches-by-recruitment
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
+
+MONITOR
+867
+22
+1006
+87
+Days Simulated
+days
+2
+1
+16
+
+PLOT
+891
+113
+1283
+438
+Population
+Days
+Mangroves
+0.0
+300.0
+0.0
+300.0
+true
+true
+"" ""
+PENS
+"Mangroves" 2.0 0 -12087248 true "" "plot count mangroves"
 
 @#$#@#$#@
 # Mangroves Thesis
