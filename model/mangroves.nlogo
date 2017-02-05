@@ -531,7 +531,7 @@ INPUTBOX
 657
 159
 omega
-100
+3
 1
 0
 Number
@@ -635,7 +635,7 @@ BUTTON
 604
 352
 Terrain View
-recolor-patches\nset dynamicView False
+recolor-patches\nset dynamicView 0
 NIL
 1
 T
@@ -782,10 +782,10 @@ NIL
 1
 
 BUTTON
-747
-369
-856
-402
+752
+370
+852
+403
 Mortality View
 recolor-patches-by-mortality
 NIL
