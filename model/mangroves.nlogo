@@ -2,7 +2,7 @@ extensions [gis]
 
 breed [mangroves mangrove]
 
-mangroves-own [diameter age alpha beta gamma dmax buffSalinity buffInundation buffCompetition]
+mangroves-own [diameter age alpha beta gamma omega dmax buffSalinity buffInundation buffCompetition species]
 
 patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features bigPatch]
 
@@ -142,21 +142,53 @@ end
 
 to plant-mangroves
   ; Plant mangroves
-  create-mangroves initial-population [
-    init-natural True
+  create-mangroves initial-native-population [
+    init-native True
+  ]
+  create-mangroves initial-planted-population [
+    init-planted True
   ]
 end
 
-to init-natural [move]
+to init-native [move]
   set diameter 0.5
   set age 0.0
   set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
   set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
   set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
   set dmax 70
+  set omega 3
   set buffSalinity 0.70
   set buffInundation 0.70
-  set buffCompetition 1.70
+  set buffCompetition 1.00
+  set species "native"
+  set color green
+  set shape "circle"
+  set size visible-size
+  let px 0
+  let py 0
+  if move = True [
+    ask one-of patches with [fertility > 0 and occupied = False][
+      set px pxcor
+      set py pycor
+      set occupied True
+    ]
+    setxy px py
+  ]
+end
+
+to init-planted [move]
+  set diameter 0.5
+  set age 0.0
+  set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
+  set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
+  set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
+  set dmax 60
+  set omega 5
+  set buffSalinity 1.00
+  set buffInundation 1.00
+  set buffCompetition 1.00
+  set species "planted"
   set color green
   set shape "circle"
   set size visible-size
@@ -251,11 +283,14 @@ to-report recruitment-chance-at [x y]
 end
 
 to grow
-  let growth (omega / (2 + alpha)) * diameter ^ (beta - alpha - 1) * (1 - ( 1 / gamma ) * ((diameter / dmax) ^ (1 + alpha)))
+  let growth diameter ^ (beta - alpha - 1)
+  set growth growth * (omega / (2 + alpha))
+  set growth growth * (1 - (1 / gamma) * (diameter / dmax) ^ (1 + alpha))
   set growth growth * salinity-response / buffSalinity
   set growth growth * inundation-response / buffInundation
   set growth growth * competition-response / buffCompetition
   set growth growth * deltaT
+  set growth max list growth 0
   set diameter diameter + growth
   if diameter <= 0 or diameter > 100 [
     ask patch-here [kill-tree-here]
@@ -315,11 +350,21 @@ end
 to-report chance-of-dying
   ; Determine chance of a plant dying based on species and diameter
   let x diameter
-  let p 0.2 * (((x - 2.5) * (x - 5.0))/((0.5 - 2.5) * (0.5 - 5.0)))
-  set p p + 0.1 * (((x - 0.5) * (x - 5))/((2.5 - 0.5) * (2.5 - 5.0)))
-  set p p + 0.083 * (((x - 0.5) * (x - 2.5))/((5.0 - 0.5) * (5.0 - 2.5)))
-  if x >= 5 [
-    set p 0.083
+  let p 1
+  ifelse species = "native" [
+    set p 0.2 * (((x - 2.5) * (x - 5.0))/((0.5 - 2.5) * (0.5 - 5.0)))
+    set p p + 0.1 * (((x - 0.5) * (x - 5))/((2.5 - 0.5) * (2.5 - 5.0)))
+    set p p + 0.083 * (((x - 0.5) * (x - 2.5))/((5.0 - 0.5) * (5.0 - 2.5)))
+    if x >= 5 [
+      set p 0.083
+    ]
+  ][
+    set p 0.24 * (((x - 2.5) * (x - 5.0))/((0.5 - 2.5) * (0.5 - 5.0)))
+    set p p + 0.12 * (((x - 0.5) * (x - 5))/((2.5 - 0.5) * (2.5 - 5.0)))
+    set p p + 0.1 * (((x - 0.5) * (x - 2.5))/((5.0 - 0.5) * (5.0 - 2.5)))
+    if x >= 5 [
+      set p 0.1
+    ]
   ]
   report p
 end
@@ -341,13 +386,40 @@ to plant-baby
   let roll random-float 1
   ; Plant  new mangrove based on recruitmentChance
   if roll < recruitmentChance or recruitmentChance >= 1.0 [
-    ; TODO: Ask for neighbors to determine parent
+    let parent min-one-of mangroves [distance myself]
     sprout-mangroves 1 [
-      init-natural False
+      let spec "native"
+      ask parent [
+        set spec species
+      ]
+      ifelse spec = "native" [
+        init-native False
+      ][
+        init-planted False
+      ]
       setxy pxcor pycor
-      set occupied True
+      inherit parent
     ]
+    set occupied True
   ]
+end
+
+to inherit [parent]
+  ; Get chars of parent
+  let a 0
+  let b 0
+  let c 0
+  let z 0
+  ask parent [
+    set a alpha
+    set b beta
+    set c gamma
+    set z omega
+  ]
+  set alpha a
+  set beta b
+  set gamma c
+  set omega z
 end
 
 
@@ -368,7 +440,7 @@ to storm
         kill-tree-here
         set stormKilled stormKilled + 1
       ]
-      ask patches in-radius 10 [
+      ask patches in-radius 30 [
         kill-tree-here
         set stormKilled stormKilled + 1
       ]
@@ -519,19 +591,8 @@ INPUTBOX
 24
 657
 84
-initial-population
+initial-native-population
 200
-1
-0
-Number
-
-INPUTBOX
-502
-99
-657
-159
-omega
-3
 1
 0
 Number
@@ -542,7 +603,7 @@ INPUTBOX
 657
 234
 range-offset
-30
+5
 1
 0
 Number
@@ -724,8 +785,9 @@ true
 true
 "" ""
 PENS
-"Mangroves" 1.0 0 -12087248 true "" "plot count mangroves"
+"Natives" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\"]"
 "Storms" 1.0 0 -2674135 true "" "plot 0\nif stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+"Planteds" 1.0 0 -14730904 true "" "plot count mangroves with [species = \"planted\"]"
 
 SLIDER
 870
@@ -797,6 +859,17 @@ NIL
 NIL
 NIL
 1
+
+INPUTBOX
+504
+99
+659
+159
+initial-planted-population
+200
+1
+0
+Number
 
 @#$#@#$#@
 # Mangroves Thesis
