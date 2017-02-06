@@ -6,7 +6,7 @@ mangroves-own [diameter age alpha beta gamma omega dmax buffSalinity buffInundat
 
 patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features bigPatch]
 
-globals [deltaT gisDist gisFeatures trueSize resolution dynamicView years nextStorm stormOccurred stormKilled popBeforeStormNative popBeforeStormPlanted regenerationTimeNative regenerationTimePlanted avgRegTimeNative regTimeNativeCount avgRegTimePlanted regTimePlantedCount]
+globals [deltaT gisDist gisFeatures trueSize resolution dynamicView years nextStorm stormOccurred stormKilled popBeforeStormNative popBeforeStormPlanted regenerationTimeNative regenerationTimePlanted avgRegTimeNative regTimeNativeCount avgRegTimePlanted regTimePlantedCount deaths avgLifespan]
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 ;      INITIALIZATION       ;
@@ -28,6 +28,8 @@ to setup
   set regTimeNativeCount 0
   set avgRegTimePlanted 0
   set regTimePlantedCount 0
+  set avgLifespan 0
+  set deaths 0
 
   ; Setup map/world
   set trueSize 750 ; For Bani map
@@ -52,8 +54,7 @@ to simulate
     final-report
     stop
   ] ; Stop if maximum desired steps has been reached
-  set deltaT random-float 0.5 ; Get random time increment
-  set deltaT deltaT + 0.5
+  set deltaT random-float 1 ; Get random time increment
   set years years + deltaT ; Update years
   set stormOccurred False
   set stormKilled 0
@@ -93,7 +94,8 @@ to simulate
   update-recruitment-chance ; Update recruitment chances for patches
   ; Grow each agent
   ask mangroves [grow]
-  ask mangroves [reap-soul] ; Kill some mangroves at random (from natural causes)
+  ask patches with [fertility > 0 and recruitmentChance > 0] [plant-baby] ; Make mangrove babies
+  ask one-of mangroves [reap-soul] ; Kill some mangroves at random (from natural causes)
   ; If scheduled, make storm occur
   if years >= nextStorm [
     ;set popBeforeStormNative popBeforeStormNative + (count mangroves with [species = "native" and diameter >= 5])
@@ -106,7 +108,6 @@ to simulate
     set nextStorm next-storm-schedule
     set stormOccurred True
   ]
-  ask patches with [fertility > 0 and recruitmentChance > 0] [plant-baby] ; Make mangrove babies
   tick
 end
 
@@ -115,8 +116,9 @@ end
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 
 to final-report
+  ; >>>>>>>>>>> REPORT REGENERATION TIMES <<<<<<<<<<<<
   ; Add time from uncompleted regeneration
-  print "====================================="
+  print "=================================================="
   if regenerationTimeNative > 0 [
     print " <!> Native Tree Population is unrecovered for this long:"
     print regenerationTimeNative
@@ -146,6 +148,9 @@ to final-report
   ][
     print avgRegTimePlanted
   ]
+  print "-----------------------------------------------------"
+  print "Average Tree Lifespan:"
+  print avgLifespan / deaths
 end
 
 to setup-patches
@@ -214,6 +219,14 @@ to plant-mangroves
   ; Plant mangroves
   create-mangroves initial-native-population [
     init-native True
+    set diameter diameter + random-float 10
+    if diameter >= 5 [
+      ask patch-here [
+        set recruitmentChance 0.5
+      ]
+    ]
+    set size visible-size
+    recolor-mangrove
   ]
   create-mangroves initial-planted-population [
     init-planted True
@@ -312,8 +325,8 @@ to update-recruitment-chance
     if recruitmentChance < 0 [
       set recruitmentChance 0
     ]
-    if recruitmentChance > 0.12 [
-      set recruitmentChance 0.12
+    if recruitmentChance > 0.5 [
+      set recruitmentChance 0.5
     ]
   ]
 end
@@ -360,8 +373,7 @@ to grow
   set growth growth * inundation-response / buffInundation
   set growth growth * competition-response / buffCompetition
   set growth growth * deltaT
-  set growth max list growth 0
-  set diameter diameter + growth
+  set diameter diameter + growth / 365
   if diameter > dmax [
     set diameter dmax
   ]
@@ -381,7 +393,7 @@ to grow
       ]
     ][
       ask patch-here [
-        set recruitmentChance 0.12
+        set recruitmentChance 0.5
       ]
     ]
   ]
@@ -401,6 +413,8 @@ end
 
 to kill-tree-here
   ask turtles-here [
+    set deaths deaths + 1
+    set avgLifespan avgLifespan + age
     die
   ]
   set occupied False
@@ -421,7 +435,7 @@ to-report competition-response
     let comp-here e ^ (-0.1 * diameter / 2)
     set compTotal compTotal * comp-here
   ]
-  ask mangroves in-radius 3 [
+  ask neighbors [
     ask mangroves-at pxcor pycor [
       let comp-here e ^ (-0.1 * diameter / 2)
       set compTotal compTotal * comp-here
@@ -458,6 +472,7 @@ to reap-soul
   let probOfDeath chance-of-dying
   if roll <= probOfDeath [
     kill-tree-here
+    stop
   ]
 end
 
@@ -488,7 +503,7 @@ to plant-baby
         inherit parent
       ]
     ][
-       print "No nearby parent"
+       print "No nearby parent found"
     ]
     set occupied True
   ]
@@ -530,23 +545,57 @@ to storm
         kill-tree-here
         set stormKilled stormKilled + 1
       ]
-      ask patches in-radius 30 [
-        kill-tree-here
-        set stormKilled stormKilled + 1
-      ]
+      ;ask patches in-radius 30 [
+      ;  kill-tree-here
+      ;  set stormKilled stormKilled + 1
+      ;]
     ]
   ]
-  let blockDisturb random 25
-  ;print "Block Disturb"
-  ;print blockDisturb
-  ;ask patches with [ bigPatch = blockDisturb] [
-  ;  kill-tree-here
-  ;  set stormKilled stormKilled + 1
-  ;]
+  let blockDisturb1 random 25
+  let blockDisturb2 random 25
+  let blockDisturb3 random 25
+  print "Block Disturb"
+  print blockDisturb1
+  print blockDisturb2
+  print blockDisturb3
+  ask patches with [bigPatch = blockDisturb1 or bigPatch = blockDisturb2 or bigPatch = blockDisturb3] [
+    if random-float 1.0 <= 0.9 [
+      kill-tree-here
+      set stormKilled stormKilled + 1
+    ]
+  ]
+end
+
+to-report planted-patches
+  report patches with [ features = 2 and fertility > 0 and occupied = False ]
+end
+
+to-report native-patches
+  report patches with [ features = 3 and fertility > 0 and occupied = False ]
 end
 
 to-report crown-radius
   report 11.1 * diameter ^ 0.65
+end
+
+to move-to-native-patch
+  let x-tmp 0
+  let y-tmp 0
+  ask one-of native-patches [
+    set x-tmp pxcor
+    set y-tmp pycor
+  ]
+  setxy x-tmp y-tmp
+end
+
+to move-to-planted-patch
+  let x-tmp 0
+  let y-tmp 0
+  ask one-of planted-patches [
+    set x-tmp pxcor
+    set y-tmp pycor
+  ]
+  setxy x-tmp y-tmp
 end
 
 to-report visible-size
@@ -693,7 +742,7 @@ INPUTBOX
 657
 234
 range-offset
-1.5
+5
 1
 0
 Number
@@ -738,7 +787,7 @@ INPUTBOX
 837
 83
 max-steps
-500
+5000
 1
 0
 Number
@@ -853,7 +902,7 @@ MONITOR
 17
 1014
 82
-Years Simulated
+Days Simulated
 years
 2
 1
@@ -900,7 +949,7 @@ INPUTBOX
 838
 307
 storm-beta
-5
+100
 1
 0
 Number
