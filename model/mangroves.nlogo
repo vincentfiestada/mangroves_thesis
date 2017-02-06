@@ -6,7 +6,7 @@ mangroves-own [diameter age alpha beta gamma omega dmax buffSalinity buffInundat
 
 patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features bigPatch]
 
-globals [deltaT gisDist gisFeatures trueSize resolution dynamicView days nextStorm stormOccurred stormKilled]
+globals [deltaT gisDist gisFeatures trueSize resolution dynamicView years nextStorm stormOccurred stormKilled popBeforeStormNative popBeforeStormPlanted regenerationTimeNative regenerationTimePlanted avgRegTimeNative regTimeNativeCount avgRegTimePlanted regTimePlantedCount]
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 ;      INITIALIZATION       ;
@@ -16,10 +16,18 @@ to setup
   clear-all
   reset-ticks
 
-  set days 0
+  set years 0
   set deltaT 0.0
   set nextStorm next-storm-schedule
   set stormOccurred False
+  set regenerationTimeNative 0
+  set popBeforeStormNative 0
+  set regenerationTimePlanted 0
+  set popBeforeStormPlanted 0
+  set avgRegTimeNative 0
+  set regTimeNativeCount 0
+  set avgRegTimePlanted 0
+  set regTimePlantedCount 0
 
   ; Setup map/world
   set trueSize 750 ; For Bani map
@@ -40,11 +48,15 @@ end
 
 to simulate
   ;if not any? mangroves [stop] ; If all mangroves are dead, stop
-  if ticks >= max-steps [stop] ; Stop if maximum desired steps has been reached
+  if ticks >= max-steps [
+    final-report
+    stop
+  ] ; Stop if maximum desired steps has been reached
   set deltaT random-float 0.5 ; Get random time increment
   set deltaT deltaT + 0.5
-  set days days + deltaT ; Update days
+  set years years + deltaT ; Update years
   set stormOccurred False
+  set stormKilled 0
   ; Recolor patches if recruitment chance view is on
   if dynamicView = 1 [
     recolor-patches-by-recruitment
@@ -53,6 +65,29 @@ to simulate
     recolor-patches
     recolor-patches-by-mortality
   ]
+  ; Check if regeneration is complete for both native & planted
+  ifelse count mangroves with [species = "native" and diameter >= 5] < popBeforeStormNative [
+    set regenerationTimeNative regenerationTimeNative + deltaT
+  ][
+    if popBeforeStormNative > 0 [
+      print "Recovered :: Native"
+      set avgRegTimeNative avgRegTimeNative + regenerationTimeNative
+      set regTimeNativeCount regTimeNativeCount + 1
+      set regenerationTimeNative 0
+      set popBeforeStormNative 0
+    ]
+  ]
+  ifelse count mangroves with [species = "planted" and diameter >= 5] < popBeforeStormPlanted [
+    set regenerationTimePlanted regenerationTimePlanted + deltaT
+  ][
+    if popBeforeStormPlanted > 0 [
+      print "Recovered :: Planted"
+      set avgRegTimePlanted avgRegTimePlanted + regenerationTimePlanted
+      set regTimePlantedCount regTimePlantedCount + 1
+      set regenerationTimePlanted 0
+      set popBeforeStormPlanted 0
+    ]
+  ]
   update-white-noise ; Update white noise term
   preserve-chances; Save old probabilities so calculation of new chances is uniform
   update-recruitment-chance ; Update recruitment chances for patches
@@ -60,7 +95,13 @@ to simulate
   ask mangroves [grow]
   ask mangroves [reap-soul] ; Kill some mangroves at random (from natural causes)
   ; If scheduled, make storm occur
-  if days >= nextStorm [
+  if years >= nextStorm [
+    ;set popBeforeStormNative popBeforeStormNative + (count mangroves with [species = "native" and diameter >= 5])
+    ;set popBeforeStormPlanted popBeforeStormPlanted + (count mangroves with [species = "planted" and diameter >= 5])
+    ;set popBeforeStormNative (count mangroves with [species = "native" and diameter >= 5])
+    ;set popBeforeStormPlanted (count mangroves with [species = "planted" and diameter >= 5])
+    set popBeforeStormNative max list popBeforeStormNative (count mangroves with [species = "native" and diameter >= 5])
+    set popBeforeStormPlanted max list popBeforeStormPlanted (count mangroves with [species = "planted" and diameter >= 5])
     storm
     set nextStorm next-storm-schedule
     set stormOccurred True
@@ -73,6 +114,40 @@ end
 ;     UTILITY FUNCTIONS     ;
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 
+to final-report
+  ; Add time from uncompleted regeneration
+  print "====================================="
+  if regenerationTimeNative > 0 [
+    print " <!> Native Tree Population is unrecovered for this long:"
+    print regenerationTimeNative
+    print " ____________________"
+  ]
+  if regenerationTimePlanted > 0 [
+    print " <!> Planted Tree Population is unrecovered for this long: "
+    print regenerationTimePlanted
+    print " ____________________"
+  ]
+  if regTimeNativeCount > 0 [
+    set avgRegTimeNative avgRegTimeNative / regTimeNativeCount
+  ]
+  if regTimePlantedCount > 0 [
+    set avgRegTimePlanted avgRegTimePlanted / regTimePlantedCount
+  ]
+  print "Average Regeneration Time for Native Tree population: "
+  ifelse avgRegTimeNative <= 0 [
+    print "<<Infinity -- Never recovered>>"
+  ][
+    print avgRegTimeNative
+  ]
+  print "-----------------------------------------------------"
+  print "Average Regeneration Time for Planted Tree population:"
+  ifelse avgRegTimePlanted <= 0 [
+    print "<<Infinity -- Never recovered>>"
+  ][
+    print avgRegTimePlanted
+  ]
+end
+
 to setup-patches
   ; Set patch variables
   init-dist
@@ -84,7 +159,7 @@ to setup-patches
     set salinity (1 + e ^ ((salinity - 72) / 4)) ^ -1
     set inundation min list (0.00533 * (150 - dist)) 1
     set inundation 1 - inundation
-    ifelse dist <= 0 [
+    ifelse dist <= 0 or features = 1 [
       set fertility 0
     ][
       set fertility 1
@@ -120,7 +195,7 @@ end
 
 to init-dist
   ; Get GIS data for shoreline distances
-  set gisDist gis:load-dataset "bani_distance.asc"
+  set gisDist gis:load-dataset gis-distances-filename
   gis:set-world-envelope-ds gis:envelope-of gisDist
   gis:apply-raster gisDist dist
   diffuse dist 0.9
@@ -130,7 +205,7 @@ end
 
 to init-features
   ; Get GIS data for topographical features (elevation)
-  set gisFeatures gis:load-dataset "bani_features.asc"
+  set gisFeatures gis:load-dataset gis-features-filename
   gis:set-world-envelope-ds gis:envelope-of gisFeatures
   gis:apply-raster gisFeatures features
 end
@@ -151,7 +226,7 @@ to init-native [move]
   set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
   set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
   set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
-  set dmax 70
+  set dmax 40
   set omega 3
   set buffSalinity 0.70
   set buffInundation 0.70
@@ -178,7 +253,7 @@ to init-planted [move]
   set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
   set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
   set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
-  set dmax 60
+  set dmax 40
   set omega 5
   set buffSalinity 1.00
   set buffInundation 1.00
@@ -287,8 +362,8 @@ to grow
   set growth growth * deltaT
   set growth max list growth 0
   set diameter diameter + growth
-  if diameter > 60 [
-    set diameter 60
+  if diameter > dmax [
+    set diameter dmax
   ]
   if diameter <= 0 [
     ask patch-here [
@@ -461,10 +536,7 @@ to storm
       ]
     ]
   ]
-
-  print stormKilled
   let blockDisturb random 25
-
   ;print "Block Disturb"
   ;print blockDisturb
   ;ask patches with [ bigPatch = blockDisturb] [
@@ -483,8 +555,8 @@ to-report visible-size
 end
 
 to-report next-storm-schedule
-  ; Get next storm schedule (in simulated days)
-  report days + random-exponential storm-beta
+  ; Get next storm schedule (in simulated years)
+  report years + random-exponential storm-beta
 end
 
 to recolor-mangrove
@@ -578,10 +650,10 @@ to recolor-patches-by-mortality
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-9
 13
-485
-510
+12
+489
+509
 -1
 -1
 9.32
@@ -610,7 +682,7 @@ INPUTBOX
 657
 84
 initial-native-population
-200
+300
 1
 0
 Number
@@ -621,7 +693,7 @@ INPUTBOX
 657
 234
 range-offset
-0.5
+1.5
 1
 0
 Number
@@ -666,7 +738,7 @@ INPUTBOX
 837
 83
 max-steps
-1000
+500
 1
 0
 Number
@@ -779,19 +851,19 @@ NIL
 MONITOR
 870
 17
-1000
+1014
 82
-Days Simulated
-days
+Years Simulated
+years
 2
 1
 16
 
 PLOT
-870
-92
+872
+93
 1322
-460
+461
 Population
 Days
 Mangroves
@@ -804,7 +876,7 @@ true
 "" ""
 PENS
 "Natives" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\"]"
-"Storms" 1.0 0 -2674135 true "" "plot 0\nif stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+"Storms" 1.0 2 -2674135 true "" "plot 0\nif stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 "Planteds" 1.0 0 -14730904 true "" "plot count mangroves with [species = \"planted\"]"
 
 SLIDER
@@ -816,7 +888,7 @@ tree-protect
 tree-protect
 0
 0.1
-0
+0.065
 0.005
 1
 NIL
@@ -828,16 +900,16 @@ INPUTBOX
 838
 307
 storm-beta
-150
+5
 1
 0
 Number
 
 MONITOR
-1010
-17
-1166
-62
+1024
+18
+1180
+63
 Next Storm Scheduled at
 nextStorm
 2
@@ -884,16 +956,16 @@ INPUTBOX
 659
 159
 initial-planted-population
-200
+400
 1
 0
 Number
 
 PLOT
-183
-604
-527
-893
+13
+528
+720
+911
 Population by Maturity
 NIL
 NIL
@@ -909,8 +981,139 @@ PENS
 "Native Saplings" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\" and diameter >= 2.5 and diameter < 5.0]"
 "Native Trees" 1.0 0 -14333415 true "" "plot count mangroves with [species = \"native\" and diameter >= 5.0]"
 "Planted Seedlings" 1.0 0 -11881837 true "" "plot count mangroves with [species = \"planted\" and diameter < 2.5]"
-"Planted Saplings" 1.0 0 -15302303 true "" "plot count mangroves with [species = \"planted\" with diameter >= 2.5 and diameter < 5]"
+"Planted Saplings" 1.0 0 -15302303 true "" "plot count mangroves with [species = \"planted\" and diameter >= 2.5 and diameter < 5]"
 "Planted Trees" 1.0 0 -15973838 true "" "plot count mangroves with [species = \"planted\" and diameter > 5.0]"
+"Storm" 1.0 2 -5298144 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+
+PLOT
+732
+525
+1321
+754
+Average Tree DBH
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"avgTreeDiameter" 1.0 0 -5298144 true "" "let s 0\nask mangroves with [diameter >= 5] [\n    set s s + diameter\n]\nlet n count mangroves with [diameter >= 5]\nifelse n > 0 [\n  let a s / n\n  plot a\n][\n  plot 0\n]"
+
+PLOT
+732
+760
+1318
+910
+Average Tree Age
+Time
+Age
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"age" 1.0 0 -10022847 true "" "let s 0\nask mangroves with [diameter >= 5] [\n    set s s + age\n]\nlet n count mangroves with [diameter >= 5]\nifelse n > 0 [\n  let a s / n\n  plot a\n][\n  plot 0\n]"
+
+PLOT
+15
+922
+822
+1136
+Regeneration Time
+Time
+Regeneration Time
+0.0
+10.0
+0.0
+10.0
+true
+true
+"" ""
+PENS
+"Native Trees" 1.0 0 -14439633 true "" "plot regenerationTimeNative"
+"Storm" 1.0 2 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+"Planted Trees" 1.0 0 -13403783 true "" "plot regenerationTimePlanted"
+
+INPUTBOX
+505
+424
+658
+484
+gis-features-filename
+bani_features.asc
+1
+0
+String
+
+INPUTBOX
+685
+425
+860
+485
+gis-distances-filename
+bani_distance.asc
+1
+0
+String
+
+MONITOR
+20
+446
+108
+503
+Population
+count mangroves
+0
+1
+14
+
+PLOT
+827
+922
+1319
+1135
+Killed by Storm
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"Victims" 1.0 0 -16777216 true "" "plot stormKilled"
+"Storm" 1.0 2 -5298144 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+
+MONITOR
+116
+463
+179
+504
+Native Pop
+count mangroves with [species = \"native\"]
+0
+1
+10
+
+MONITOR
+183
+463
+248
+504
+Planted Pop
+count mangroves with [species = \"planted\"]
+0
+1
+10
 
 @#$#@#$#@
 # Mangroves Thesis
