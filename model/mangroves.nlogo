@@ -18,7 +18,7 @@ to setup
 
   set years 0
   set deltaT 0.0
-  set nextStorm next-storm-schedule
+  if allow-storms = True [set nextStorm next-storm-schedule]
   set stormOccurred False
   set regenerationTimeNative 0
   set popBeforeStormNative 0
@@ -50,11 +50,11 @@ end
 
 to simulate
   ;if not any? mangroves [stop] ; If all mangroves are dead, stop
-  if ticks >= max-steps [
+  if ticks >= max-days [
     final-report
     stop
   ] ; Stop if maximum desired steps has been reached
-  set deltaT random-float 1 ; Get random time increment
+  set deltaT random-poisson 1 ; Get random time increment
   set years years + deltaT ; Update years
   set stormOccurred False
   set stormKilled 0
@@ -94,10 +94,16 @@ to simulate
   update-recruitment-chance ; Update recruitment chances for patches
   ; Grow each agent
   ask mangroves [grow]
-  ask patches with [fertility > 0 and recruitmentChance > 0] [plant-baby] ; Make mangrove babies
-  ask one-of mangroves [reap-soul] ; Kill some mangroves at random (from natural causes)
+  let target one-of patches with [fertility > 0 and recruitmentChance > 0 and occupied = False] ; Make mangrove babies
+  if target != nobody [
+    ask target [plant-baby]
+  ]
+  set target one-of mangroves
+  if target != nobody [
+    ask target [reap-soul] ; Kill some mangroves at random (from natural causes)
+  ]
   ; If scheduled, make storm occur
-  if years >= nextStorm [
+  if allow-storms = True and years >= nextStorm [
     ;set popBeforeStormNative popBeforeStormNative + (count mangroves with [species = "native" and diameter >= 5])
     ;set popBeforeStormPlanted popBeforeStormPlanted + (count mangroves with [species = "planted" and diameter >= 5])
     ;set popBeforeStormNative (count mangroves with [species = "native" and diameter >= 5])
@@ -219,7 +225,7 @@ to plant-mangroves
   ; Plant mangroves
   create-mangroves initial-native-population [
     init-native True
-    set diameter diameter + random-float 10
+    set diameter diameter + random 5
     if diameter >= 5 [
       ask patch-here [
         set recruitmentChance 0.5
@@ -230,15 +236,16 @@ to plant-mangroves
   ]
   create-mangroves initial-planted-population [
     init-planted True
+    ask patch-here [set recruitmentChance 0]
   ]
 end
 
 to init-native [move]
   set diameter 0.5
   set age 0.0
-  set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
-  set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
-  set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
+  set alpha 0.95 - range-offset + random-float (2 * (0.95 + range-offset))
+  set beta 2.0 - range-offset + random-float (2 * (2.0 + range-offset))
+  set gamma 1.0 - range-offset + random-float (2 * (1.0 + range-offset))
   set dmax 40
   set omega 3
   set buffSalinity 0.70
@@ -251,21 +258,22 @@ to init-native [move]
   let px 0
   let py 0
   if move = True [
-    ask one-of patches with [fertility > 0 and occupied = False][
-      set px pxcor
-      set py pycor
-      set occupied True
-    ]
-    setxy px py
+    ;ask one-of patches with [fertility > 0 and occupied = False][
+    ;  set px pxcor
+    ;  set py pycor
+    ;  set occupied True
+    ;]
+    ;setxy px py
+    move-to-native-patch
   ]
 end
 
 to init-planted [move]
   set diameter 0.5
   set age 0.0
-  set alpha 0.95 - range-offset + random-float 2 * (0.95 + range-offset)
-  set beta 2.0 - range-offset + random-float 2 * (2.0 + range-offset)
-  set gamma 1.0 - range-offset + random-float 2 * (1.0 + range-offset)
+  set alpha 0.95 - range-offset + random-float (2 * (0.95 + range-offset))
+  set beta 2.0 - range-offset + random-float (2 * (2.0 + range-offset))
+  set gamma 1.0 - range-offset + random-float (2 * (1.0 + range-offset))
   set dmax 40
   set omega 5
   set buffSalinity 1.00
@@ -278,12 +286,7 @@ to init-planted [move]
   let px 0
   let py 0
   if move = True [
-    ask one-of patches with [fertility > 0 and occupied = False][
-      set px pxcor
-      set py pycor
-      set occupied True
-    ]
-    setxy px py
+    move-to-planted-patch
   ]
 end
 
@@ -325,8 +328,8 @@ to update-recruitment-chance
     if recruitmentChance < 0 [
       set recruitmentChance 0
     ]
-    if recruitmentChance > 0.5 [
-      set recruitmentChance 0.5
+    if recruitmentChance > 1 [
+      set recruitmentChance 1
     ]
   ]
 end
@@ -341,7 +344,7 @@ to-report recruitment-chance-xx [x y]
   ; Default option: report 2nd-order finite difference approximation
   let xnext x + 1
   let xprev x - 1
-  report ((recruitment-chance-at xnext y ) - 2 * (recruitment-chance-at x y) + (recruitment-chance-at xprev y)) / 225
+  report ((recruitment-chance-at xnext y ) - 2 * (recruitment-chance-at x y) + (recruitment-chance-at xprev y))
 end
 
 to-report recruitment-chance-yy [x y]
@@ -354,7 +357,7 @@ to-report recruitment-chance-yy [x y]
   ; Default option: report 2nd-order finite difference approximation
   let ynext y + 1
   let yprev y - 1
-  report ((recruitment-chance-at x ynext ) - 2 * (recruitment-chance-at x y) + (recruitment-chance-at x yprev)) / 225
+  report ((recruitment-chance-at x ynext ) - 2 * (recruitment-chance-at x y) + (recruitment-chance-at x yprev))
 end
 
 to-report recruitment-chance-at [x y]
@@ -373,7 +376,8 @@ to grow
   set growth growth * inundation-response / buffInundation
   set growth growth * competition-response / buffCompetition
   set growth growth * deltaT
-  set diameter diameter + growth / 365
+  set growth max list growth 0 ; Min growth is 0
+  set diameter diameter + growth / 365.25
   if diameter > dmax [
     set diameter dmax
   ]
@@ -389,7 +393,7 @@ to grow
   ifelse diameter >= 5 [ ; Mature tree here
     ifelse species = "native" [
       ask patch-here [
-        set recruitmentChance 0.1
+        set recruitmentChance 0.5
       ]
     ][
       ask patch-here [
@@ -413,8 +417,10 @@ end
 
 to kill-tree-here
   ask turtles-here [
-    set deaths deaths + 1
-    set avgLifespan avgLifespan + age
+    if diameter >= 5 [
+      set deaths deaths + 1
+      set avgLifespan avgLifespan + age
+    ]
     die
   ]
   set occupied False
@@ -471,8 +477,9 @@ to reap-soul
   let roll random-float 1.0
   let probOfDeath chance-of-dying
   if roll <= probOfDeath [
-    kill-tree-here
-    stop
+    ask patch-here [
+      kill-tree-here
+    ]
   ]
 end
 
@@ -486,7 +493,7 @@ to plant-baby
   if roll < recruitmentChance or recruitmentChance >= 1.0 [
     let parent min-one-of mangroves with [diameter >= 5] [distance myself]
     if parent = nobody [
-      set parent one-of mangroves with [diameter >= 5]
+      set parent one-of mangroves with [species = "planted"]
     ]
     ifelse parent != nobody [
       sprout-mangroves 1 [
@@ -533,7 +540,7 @@ to storm
   set stormKilled 0
 
   ask mangroves [
-    let numNeighbors count mangroves in-radius 3 with [diameter > [diameter] of myself] ; Get number of neighbors
+    let numNeighbors count mangroves in-radius 1 with [diameter >= [diameter] of myself] ; Get number of neighbors
     let stormVulnerability 0.0
     ifelse diameter >= 5 [
       set stormVulnerability 0.7 - (numNeighbors * tree-protect)
@@ -545,10 +552,10 @@ to storm
         kill-tree-here
         set stormKilled stormKilled + 1
       ]
-      ;ask patches in-radius 30 [
-      ;  kill-tree-here
-      ;  set stormKilled stormKilled + 1
-      ;]
+      ask patches in-radius 30 [
+        kill-tree-here
+        set stormKilled stormKilled + 1
+      ]
     ]
   ]
   let blockDisturb1 random 25
@@ -631,12 +638,12 @@ to recolor-patches
   ask patches [
     ifelse dist > 0 [
       ifelse features = 1 [
-        set pcolor gray
+        set pcolor gray - 2
       ] [
-        set pcolor scale-color orange dist 240 -140
+        set pcolor scale-color brown dist 240 -140
       ]
     ] [
-      set pcolor blue
+      set pcolor blue - 2
     ]
   ]
 end
@@ -667,7 +674,7 @@ to recolor-patches-by-recruitment
     ifelse recruitmentChance >= 1 [
       set pcolor cyan
     ][
-      set pcolor scale-color red (recruitmentChance * 200) 500 -200
+      set pcolor scale-color red (recruitmentChance * 200) -250 250
     ]
   ]
   set dynamicView 1
@@ -699,10 +706,10 @@ to recolor-patches-by-mortality
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-13
-12
-489
-509
+10
+15
+486
+512
 -1
 -1
 9.32
@@ -742,16 +749,16 @@ INPUTBOX
 657
 234
 range-offset
-5
+0.25
 1
 0
 Number
 
 BUTTON
-504
-255
-568
-288
+503
+257
+567
+290
 Reset
 setup
 NIL
@@ -786,8 +793,8 @@ INPUTBOX
 23
 837
 83
-max-steps
-5000
+max-days
+10000
 1
 0
 Number
@@ -830,10 +837,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-504
-319
-604
-352
+506
+320
+606
+353
 Terrain View
 recolor-patches\nset dynamicView 0
 NIL
@@ -925,7 +932,7 @@ true
 "" ""
 PENS
 "Natives" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\"]"
-"Storms" 1.0 2 -2674135 true "" "plot 0\nif stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+"Storms" 1.0 2 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 "Planteds" 1.0 0 -14730904 true "" "plot count mangroves with [species = \"planted\"]"
 
 SLIDER
@@ -936,8 +943,8 @@ SLIDER
 tree-protect
 tree-protect
 0
-0.1
-0.065
+0.2
+0.13
 0.005
 1
 NIL
@@ -949,7 +956,7 @@ INPUTBOX
 838
 307
 storm-beta
-100
+150
 1
 0
 Number
@@ -1005,7 +1012,7 @@ INPUTBOX
 659
 159
 initial-planted-population
-400
+600
 1
 0
 Number
@@ -1016,23 +1023,23 @@ PLOT
 720
 911
 Population by Maturity
-NIL
-NIL
+Time
+Mangroves
 0.0
 10.0
 0.0
 10.0
 true
-false
+true
 "" ""
 PENS
-"Native Seedlings" 1.0 0 -8732573 true "" "plot count mangroves with [species = \"native\" and diameter < 2.5]"
-"Native Saplings" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\" and diameter >= 2.5 and diameter < 5.0]"
-"Native Trees" 1.0 0 -14333415 true "" "plot count mangroves with [species = \"native\" and diameter >= 5.0]"
-"Planted Seedlings" 1.0 0 -11881837 true "" "plot count mangroves with [species = \"planted\" and diameter < 2.5]"
-"Planted Saplings" 1.0 0 -15302303 true "" "plot count mangroves with [species = \"planted\" and diameter >= 2.5 and diameter < 5]"
-"Planted Trees" 1.0 0 -15973838 true "" "plot count mangroves with [species = \"planted\" and diameter > 5.0]"
-"Storm" 1.0 2 -5298144 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+"Native Seedlings" 1.0 1 -8732573 true "" "plot count mangroves with [species = \"native\" and diameter < 2.5]"
+"Native Saplings" 1.0 1 -12087248 true "" "plot count mangroves with [species = \"native\" and diameter >= 2.5 and diameter < 5.0]"
+"Native Trees" 1.0 1 -14333415 true "" "plot count mangroves with [species = \"native\" and diameter >= 5.0]"
+"Planted Seedlings" 1.0 1 -11033397 true "" "plot count mangroves with [species = \"planted\" and diameter < 2.5]"
+"Planted Saplings" 1.0 1 -14454117 true "" "plot count mangroves with [species = \"planted\" and diameter >= 2.5 and diameter < 5]"
+"Planted Trees" 1.0 1 -15582384 true "" "plot count mangroves with [species = \"planted\" and diameter > 5.0]"
+"Storm" 1.0 1 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 
 PLOT
 732
@@ -1040,8 +1047,8 @@ PLOT
 1321
 754
 Average Tree DBH
-NIL
-NIL
+Time
+Ave. Diameter
 0.0
 10.0
 0.0
@@ -1050,7 +1057,7 @@ true
 false
 "" ""
 PENS
-"avgTreeDiameter" 1.0 0 -5298144 true "" "let s 0\nask mangroves with [diameter >= 5] [\n    set s s + diameter\n]\nlet n count mangroves with [diameter >= 5]\nifelse n > 0 [\n  let a s / n\n  plot a\n][\n  plot 0\n]"
+"avgTreeDiameter" 10.0 1 -955883 true "" "let s 0\nask mangroves with [diameter >= 5] [\n    set s s + diameter\n]\nlet n count mangroves with [diameter >= 5]\nifelse n > 0 [\n  let a s / n\n  plot a\n][\n  plot 0\n]"
 
 PLOT
 732
@@ -1068,7 +1075,7 @@ true
 false
 "" ""
 PENS
-"age" 1.0 0 -10022847 true "" "let s 0\nask mangroves with [diameter >= 5] [\n    set s s + age\n]\nlet n count mangroves with [diameter >= 5]\nifelse n > 0 [\n  let a s / n\n  plot a\n][\n  plot 0\n]"
+"age" 10.0 1 -10022847 true "" "let s 0\nask mangroves with [diameter >= 5] [\n    set s s + age\n]\nlet n count mangroves with [diameter >= 5]\nifelse n > 0 [\n  let a s / n\n  plot a\n][\n  plot 0\n]"
 
 PLOT
 15
@@ -1087,7 +1094,7 @@ true
 "" ""
 PENS
 "Native Trees" 1.0 0 -14439633 true "" "plot regenerationTimeNative"
-"Storm" 1.0 2 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+"Storm" 1.0 1 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 "Planted Trees" 1.0 0 -13403783 true "" "plot regenerationTimePlanted"
 
 INPUTBOX
@@ -1129,8 +1136,8 @@ PLOT
 1319
 1135
 Killed by Storm
-NIL
-NIL
+Time
+Storm Victims
 0.0
 10.0
 0.0
@@ -1163,6 +1170,17 @@ count mangroves with [species = \"planted\"]
 0
 1
 10
+
+SWITCH
+1192
+19
+1312
+52
+allow-storms
+allow-storms
+0
+1
+-1000
 
 @#$#@#$#@
 # Mangroves Thesis
