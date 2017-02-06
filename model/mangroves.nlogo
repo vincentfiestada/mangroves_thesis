@@ -41,12 +41,10 @@ end
 to simulate
   ;if not any? mangroves [stop] ; If all mangroves are dead, stop
   if ticks >= max-steps [stop] ; Stop if maximum desired steps has been reached
-
   set deltaT random-float 0.5 ; Get random time increment
   set deltaT deltaT + 0.5
   set days days + deltaT ; Update days
   set stormOccurred False
-
   ; Recolor patches if recruitment chance view is on
   if dynamicView = 1 [
     recolor-patches-by-recruitment
@@ -61,16 +59,13 @@ to simulate
   ; Grow each agent
   ask mangroves [grow]
   ask mangroves [reap-soul] ; Kill some mangroves at random (from natural causes)
-
   ; If scheduled, make storm occur
   if days >= nextStorm [
     storm
     set nextStorm next-storm-schedule
     set stormOccurred True
   ]
-
   ask patches with [fertility > 0 and recruitmentChance > 0] [plant-baby] ; Make mangrove babies
-
   tick
 end
 
@@ -189,7 +184,7 @@ to init-planted [move]
   set buffInundation 1.00
   set buffCompetition 1.00
   set species "planted"
-  set color green
+  set color turquoise
   set shape "circle"
   set size visible-size
   let px 0
@@ -242,8 +237,8 @@ to update-recruitment-chance
     if recruitmentChance < 0 [
       set recruitmentChance 0
     ]
-    if recruitmentChance >= 1 [
-      set recruitmentChance 0.8
+    if recruitmentChance > 0.12 [
+      set recruitmentChance 0.12
     ]
   ]
 end
@@ -292,15 +287,28 @@ to grow
   set growth growth * deltaT
   set growth max list growth 0
   set diameter diameter + growth
-  if diameter <= 0 or diameter > 100 [
-    ask patch-here [kill-tree-here]
+  if diameter > 60 [
+    set diameter 60
+  ]
+  if diameter <= 0 [
+    ask patch-here [
+      kill-tree-here
+    ]
     stop
   ]
   set age age + deltaT
   set size visible-size ; Redraw tree based on its new size
   ; Update recruitment chance at this patch
   ifelse diameter >= 5 [ ; Mature tree here
-    set recruitmentChance 0.25
+    ifelse species = "native" [
+      ask patch-here [
+        set recruitmentChance 0.1
+      ]
+    ][
+      ask patch-here [
+        set recruitmentChance 0.12
+      ]
+    ]
   ]
   [ ; Underage tree here
     set recruitmentChance 0.0
@@ -386,19 +394,26 @@ to plant-baby
   let roll random-float 1
   ; Plant  new mangrove based on recruitmentChance
   if roll < recruitmentChance or recruitmentChance >= 1.0 [
-    let parent min-one-of mangroves [distance myself]
-    sprout-mangroves 1 [
-      let spec "native"
-      ask parent [
-        set spec species
-      ]
-      ifelse spec = "native" [
-        init-native False
-      ][
+    let parent min-one-of mangroves with [diameter >= 5] [distance myself]
+    if parent = nobody [
+      set parent one-of mangroves with [diameter >= 5]
+    ]
+    ifelse parent != nobody [
+      sprout-mangroves 1 [
+        let spec "native"
+        ask parent [
+          set spec species
+        ]
+        ifelse spec = "native" [
+          init-native False
+        ][
         init-planted False
+        ]
+        setxy pxcor pycor
+        inherit parent
       ]
-      setxy pxcor pycor
-      inherit parent
+    ][
+       print "No nearby parent"
     ]
     set occupied True
   ]
@@ -475,6 +490,9 @@ end
 to recolor-mangrove
   ; Recolor a mangrove based on its age
   let tree-color green
+  if species = "planted" [
+    set tree-color turquoise
+  ]
   ifelse diameter < 2.5 [
     set color tree-color + 1.5
   ][
@@ -603,7 +621,7 @@ INPUTBOX
 657
 234
 range-offset
-5
+0.5
 1
 0
 Number
@@ -670,7 +688,7 @@ INPUTBOX
 839
 234
 diffusion-rate
-0.1
+0.5
 1
 0
 Number
@@ -870,6 +888,29 @@ initial-planted-population
 1
 0
 Number
+
+PLOT
+183
+604
+527
+893
+Population by Maturity
+NIL
+NIL
+0.0
+10.0
+0.0
+10.0
+true
+false
+"" ""
+PENS
+"Native Seedlings" 1.0 0 -8732573 true "" "plot count mangroves with [species = \"native\" and diameter < 2.5]"
+"Native Saplings" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\" and diameter >= 2.5 and diameter < 5.0]"
+"Native Trees" 1.0 0 -14333415 true "" "plot count mangroves with [species = \"native\" and diameter >= 5.0]"
+"Planted Seedlings" 1.0 0 -11881837 true "" "plot count mangroves with [species = \"planted\" and diameter < 2.5]"
+"Planted Saplings" 1.0 0 -15302303 true "" "plot count mangroves with [species = \"planted\" with diameter >= 2.5 and diameter < 5]"
+"Planted Trees" 1.0 0 -15973838 true "" "plot count mangroves with [species = \"planted\" and diameter > 5.0]"
 
 @#$#@#$#@
 # Mangroves Thesis
