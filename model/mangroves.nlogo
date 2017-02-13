@@ -246,7 +246,7 @@ to init-native [move]
   set alpha 0.95 - range-offset + random-float (2 * (0.95 + range-offset))
   set beta 2.0 - range-offset + random-float (2 * (2.0 + range-offset))
   set gamma 1.0 - range-offset + random-float (2 * (1.0 + range-offset))
-  set dmax 40
+  set dmax 70
   set omega 3
   set buffSalinity 0.70
   set buffInundation 0.70
@@ -274,7 +274,7 @@ to init-planted [move]
   set alpha 0.95 - range-offset + random-float (2 * (0.95 + range-offset))
   set beta 2.0 - range-offset + random-float (2 * (2.0 + range-offset))
   set gamma 1.0 - range-offset + random-float (2 * (1.0 + range-offset))
-  set dmax 40
+  set dmax 70
   set omega 5
   set buffSalinity 1.00
   set buffInundation 1.00
