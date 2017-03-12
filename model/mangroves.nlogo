@@ -243,9 +243,9 @@ end
 to init-native [move]
   set diameter 0.5
   set age 0.0
-  set alpha 0.95 - range-offset + random-float (2 * (0.95 + range-offset))
-  set beta 2.0 - range-offset + random-float (2 * (2.0 + range-offset))
-  set gamma 1.0 - range-offset + random-float (2 * (1.0 + range-offset))
+  set alpha effective-parameter 0.95 v-alpha
+  set beta effective-parameter 2.0 v-beta
+  set gamma effective-parameter 1.0 v-gamma
   set dmax 70
   set omega 3
   set buffSalinity 0.70
@@ -271,9 +271,9 @@ end
 to init-planted [move]
   set diameter 0.5
   set age 0.0
-  set alpha 0.95 - range-offset + random-float (2 * (0.95 + range-offset))
-  set beta 2.0 - range-offset + random-float (2 * (2.0 + range-offset))
-  set gamma 1.0 - range-offset + random-float (2 * (1.0 + range-offset))
+  set alpha effective-parameter 0.5 v-alpha
+  set beta effective-parameter 2.0 v-beta
+  set gamma effective-parameter 1.0 v-gamma
   set dmax 70
   set omega 5
   set buffSalinity 1.00
@@ -405,6 +405,14 @@ to grow
     set recruitmentChance 0.0
   ]
   recolor-mangrove
+end
+
+to-report effective-parameter [a vary]
+  ifelse vary = True [
+    report a - range-offset + random-float (2 * (a + range-offset))
+  ][
+    report a
+  ]
 end
 
 to-report salinity-response
@@ -558,18 +566,19 @@ to storm
       ]
     ]
   ]
-  let blockDisturb1 random 25
-  let blockDisturb2 random 25
-  let blockDisturb3 random 25
-  print "Block Disturb"
-  print blockDisturb1
-  print blockDisturb2
-  print blockDisturb3
-  ask patches with [bigPatch = blockDisturb1 or bigPatch = blockDisturb2 or bigPatch = blockDisturb3] [
-    if random-float 1.0 <= 0.9 [
-      kill-tree-here
-      set stormKilled stormKilled + 1
+  let i 0
+  loop [
+    if i >= storm-strength [
+      stop
     ]
+    let blockDisturb random 25
+    ask patches with [bigPatch = blockDisturb] [
+      if random-float 1.0 <= 0.9 [
+        kill-tree-here
+        set stormKilled stormKilled + 1
+      ]
+    ]
+    set i i + 1
   ]
 end
 
@@ -789,10 +798,10 @@ NIL
 1
 
 INPUTBOX
-682
-23
-837
-83
+664
+24
+819
+84
 max-days
 10000
 1
@@ -800,21 +809,21 @@ max-days
 Number
 
 INPUTBOX
-683
-99
-838
-159
+665
+100
+820
+160
 correlation-time
-1
+0.5
 1
 0
 Number
 
 INPUTBOX
-683
-174
-839
-234
+665
+175
+821
+235
 diffusion-rate
 0.5
 1
@@ -830,17 +839,17 @@ mangrove-display-scale
 mangrove-display-scale
 1
 20
-6
+5
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-506
-320
-606
-353
+504
+309
+604
+342
 Terrain View
 recolor-patches\nset dynamicView 0
 NIL
@@ -854,10 +863,10 @@ NIL
 1
 
 BUTTON
-621
-319
-721
-352
+619
+308
+719
+341
 Salinity View
 recolor-patches-by-salinity
 NIL
@@ -871,10 +880,10 @@ NIL
 1
 
 BUTTON
-740
-318
-860
-351
+738
+307
+858
+340
 Inundation View
 recolor-patches-by-inundation
 NIL
@@ -888,10 +897,10 @@ NIL
 1
 
 BUTTON
-504
-370
-639
-403
+505
+346
+640
+379
 Recruitment Chance View
 recolor-patches-by-recruitment
 NIL
@@ -951,10 +960,10 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-683
-247
-838
-307
+666
+242
+821
+302
 storm-beta
 150
 1
@@ -973,10 +982,10 @@ nextStorm
 11
 
 BUTTON
-649
-370
-739
-403
+650
+346
+740
+379
 Big Patch View
 recolor-big-patches
 NIL
@@ -990,10 +999,10 @@ NIL
 1
 
 BUTTON
-752
-370
-852
-403
+753
+346
+853
+379
 Mortality View
 recolor-patches-by-mortality
 NIL
@@ -1033,12 +1042,12 @@ true
 true
 "" ""
 PENS
-"Native Seedlings" 1.0 1 -8732573 true "" "plot count mangroves with [species = \"native\" and diameter < 2.5]"
-"Native Saplings" 1.0 1 -12087248 true "" "plot count mangroves with [species = \"native\" and diameter >= 2.5 and diameter < 5.0]"
-"Native Trees" 1.0 1 -14333415 true "" "plot count mangroves with [species = \"native\" and diameter >= 5.0]"
-"Planted Seedlings" 1.0 1 -11033397 true "" "plot count mangroves with [species = \"planted\" and diameter < 2.5]"
-"Planted Saplings" 1.0 1 -14454117 true "" "plot count mangroves with [species = \"planted\" and diameter >= 2.5 and diameter < 5]"
-"Planted Trees" 1.0 1 -15582384 true "" "plot count mangroves with [species = \"planted\" and diameter > 5.0]"
+"Native Seedlings" 1.0 0 -8732573 true "" "plot count mangroves with [species = \"native\" and diameter < 2.5]"
+"Native Saplings" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\" and diameter >= 2.5 and diameter < 5.0]"
+"Native Trees" 1.0 0 -14333415 true "" "plot count mangroves with [species = \"native\" and diameter >= 5.0]"
+"Planted Seedlings" 1.0 0 -11033397 true "" "plot count mangroves with [species = \"planted\" and diameter < 2.5]"
+"Planted Saplings" 1.0 0 -14454117 true "" "plot count mangroves with [species = \"planted\" and diameter >= 2.5 and diameter < 5]"
+"Planted Trees" 1.0 0 -15582384 true "" "plot count mangroves with [species = \"planted\" and diameter > 5.0]"
 "Storm" 1.0 1 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 
 PLOT
@@ -1098,10 +1107,10 @@ PENS
 "Planted Trees" 1.0 0 -13403783 true "" "plot regenerationTimePlanted"
 
 INPUTBOX
-505
-424
-658
-484
+507
+386
+660
+446
 gis-features-filename
 bani_features.asc
 1
@@ -1109,10 +1118,10 @@ bani_features.asc
 String
 
 INPUTBOX
-685
-425
-860
-485
+687
+387
+862
+447
 gis-distances-filename
 bani_distance.asc
 1
@@ -1179,6 +1188,64 @@ SWITCH
 allow-storms
 allow-storms
 0
+1
+-1000
+
+SLIDER
+825
+29
+858
+302
+storm-strength
+storm-strength
+0
+5
+4
+1
+1
+NIL
+VERTICAL
+
+SWITCH
+508
+475
+598
+508
+v-alpha
+v-alpha
+1
+1
+-1000
+
+TEXTBOX
+511
+454
+603
+472
+Variables to Vary:
+11
+0.0
+1
+
+SWITCH
+609
+475
+699
+508
+v-beta
+v-beta
+1
+1
+-1000
+
+SWITCH
+708
+475
+798
+508
+v-gamma
+v-gamma
+1
 1
 -1000
 
