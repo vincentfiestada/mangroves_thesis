@@ -6,7 +6,7 @@ mangroves-own [diameter age alpha beta gamma omega dmax buffSalinity buffInundat
 
 patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features bigPatch]
 
-globals [deltaT gisDist gisFeatures trueSize resolution dynamicView years nextStorm stormOccurred stormKilled popBeforeStormNative popBeforeStormPlanted regenerationTimeNative regenerationTimePlanted avgRegTimeNative regTimeNativeCount avgRegTimePlanted regTimePlantedCount deaths avgLifespan]
+globals [deltaT gisDist gisFeatures trueSize resolution dynamicView days nextStorm stormOccurred stormKilled popBeforeStormNative popBeforeStormPlanted regenerationTimeNative regenerationTimePlanted avgRegTimeNative regTimeNativeCount avgRegTimePlanted regTimePlantedCount deaths avgLifespan]
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 ;      INITIALIZATION       ;
@@ -16,7 +16,7 @@ to setup
   clear-all
   reset-ticks
 
-  set years 0
+  set days 0
   set deltaT 0.0
   if allow-storms = True [set nextStorm next-storm-schedule]
   set stormOccurred False
@@ -55,7 +55,7 @@ to simulate
     stop
   ] ; Stop if maximum desired steps has been reached
   set deltaT random-poisson 1 ; Get random time increment
-  set years years + deltaT ; Update years
+  set days days + deltaT ; Update days
   set stormOccurred False
   set stormKilled 0
   ; Recolor patches if recruitment chance view is on
@@ -103,7 +103,7 @@ to simulate
     ask target [reap-soul] ; Kill some mangroves at random (from natural causes)
   ]
   ; If scheduled, make storm occur
-  if allow-storms = True and years >= nextStorm [
+  if allow-storms = True and days >= nextStorm [
     ;set popBeforeStormNative popBeforeStormNative + (count mangroves with [species = "native" and diameter >= 5])
     ;set popBeforeStormPlanted popBeforeStormPlanted + (count mangroves with [species = "planted" and diameter >= 5])
     ;set popBeforeStormNative (count mangroves with [species = "native" and diameter >= 5])
@@ -620,8 +620,8 @@ to-report visible-size
 end
 
 to-report next-storm-schedule
-  ; Get next storm schedule (in simulated years)
-  report years + random-exponential storm-beta
+  ; Get next storm schedule (in simulated days)
+  report days + random-exponential storm-beta
 end
 
 to recolor-mangrove
@@ -803,7 +803,7 @@ INPUTBOX
 819
 84
 max-days
-10000
+20000
 1
 0
 Number
@@ -814,7 +814,7 @@ INPUTBOX
 820
 160
 correlation-time
-0.5
+1
 1
 0
 Number
@@ -825,7 +825,7 @@ INPUTBOX
 821
 235
 diffusion-rate
-0.5
+1
 1
 0
 Number
@@ -839,7 +839,7 @@ mangrove-display-scale
 mangrove-display-scale
 1
 20
-5
+13
 1
 1
 NIL
@@ -919,7 +919,7 @@ MONITOR
 1014
 82
 Days Simulated
-years
+days
 2
 1
 16
@@ -965,7 +965,7 @@ INPUTBOX
 821
 302
 storm-beta
-150
+8212
 1
 0
 Number
@@ -1200,7 +1200,7 @@ storm-strength
 storm-strength
 0
 5
-4
+1
 1
 1
 NIL
@@ -1252,7 +1252,7 @@ v-gamma
 @#$#@#$#@
 # Mangroves Thesis
 
-Please read to wiki at https://github.com/vincentfiestada/mangroves_thesis/wiki for instructions about how to use the software and more information.
+Please read the wiki at [https://github.com/vincentfiestada/mangroves_thesis/wiki](https://github.com/vincentfiestada/mangroves_thesis/wiki) for instructions about how to use the software and more information.
 
 This is an agent-based model for the regrowth of multi-species mangrove forests in fragmented habitats by Vincent Paul Fiestada and Andrew Vince Lorbis, undergrad students at the University of the Philippines Diliman Department of Computer Science.
 
@@ -1260,28 +1260,100 @@ This is an agent-based model for the regrowth of multi-species mangrove forests 
 
 The model is being re-written, using code from the previous version as well as new features such as using colored noise for population spread.
 
-**CURRENT VERSION:** Single species, small genetic "island" map, land gets more elevated farther from the shore, storms are Poisson events
+**CURRENT VERSION:** Two species, map with elevation, salinity, and inundation from custom GIS raster files, storms and time increment are Poisson distributed, spatiotemporally coloured random seed dispersal, customizable storm strength, storm frequency, etc., graphs monitoring population, average lifespan, species recovery time, etc.
+
+**TODO:** We are still planning to implement a scenario picker to allow users to easily pick custom settings. Scenarios will be based on a text file that can be easily edited.
+
+### A Note on Units
+
+For the variables and parameters below, the following units of measurement are used:
+
+- centimeters (length)
+- days (time)
+
+## How the Model Works
+
+To understand how the model simulates mangrove growth and what affects the simulation, please see the wiki at [https://github.com/vincentfiestada/mangroves_thesis/wiki](https://github.com/vincentfiestada/mangroves_thesis/wiki). We recommend that you have a basic high-level understanding of the model before using it.
 
 ## Mangrove Variables
 
-- diameter: The diameter of the mangrove at breast height; also determines maturity
+- **diameter:** The diameter of the mangrove at breast height; also determines maturity
+- **age:** How long the mangrove has been alive (in days) The age has no direct relationship with the plant's maturity (see diameter). It updates during each step of the simulation depending on the random time increment
+- **alpha:** agent-specific allometric constant relating diameter to height
+- **beta:** agent-specific allometric constant relating diameter to crown radius
+- **gamma:** agent-specific allometric constant that modifies growth based on maximum diameter
+- **omega:** growth equation harmonizing constant
+- **buffSalinity:** sensitivity to salinity
+- **buffInundation:** sensitivity to tidal inundation
+- **buffCompetition:** sensitivity to competition from neighbors
+
 
 ## Patch Variables
 
-- fertility: Growth multiplier for the occupant of this patch; if 0, plants cannot grow on the patch (e.g. sea, rock, etc.)
-- salinity: Salinity effect on this patch
-- inundation: Tidal inundation effect on this patch
-- recruitmentChance: Probability (0-1) that this patch will grow a new seedling
-- whiteNoise: Current white noise term for recruitmentChance of this patch
-- bigPatch: Identifies a local group/region that the patch belongs to. Used in block disturbance.
+- **fertility:** If False, plants cannot grow on the patch (e.g. sea, rocks, residential). In future, this can be modified to be a multiplier that modifies how fast plants on the patch grow.
+- **salinity:** Salinity effect on this patch
+- **inundation:** Tidal inundation effect on this patch
+- **recruitmentChance:** Probability (0-1) that this patch will grow a new seedling (Spatio-temporally coloured noise)
+- **whiteNoise:** Current white noise term for recruitmentChance of this patch (Gaussian white noise)
+- **bigPatch:** Identifies a local group/region that the patch belongs to. Used in block disturbance.
+- **features:** Internal data from map which identifies features of the patch, i.e. if it is part of a residential area or which species are planted on initially planted on the patch
 
 ## Global Variables
 
-- nextStorm: schedule for when the next storm hits. It is calculated as a sample from an Exponential distribution (since storms are assumed to Poisson events)
+- **deltaT:** Random time increment for the current step of the simulation. (See Salmo & Juanico's paper for more information on scheduling)
+- **days:** Number of days simulated
+- **nextStorm:** schedule for when the next storm hits. It is calculated as a sample from an Exponential distribution (since storms are assumed to Poisson events)
+- **stormOccurred:** True if a storm occurred during the previous step
+- **stormKilled:** Number of plants killed by the storm during the previous step
+- **popBeforeStormNative:** Native species population before the previous storm occurred
+- **popBeforeStormPlanted:** Planted species population before the previous storm occurred
+- **regenerationTimeNative:** Time since the previous storm and before the native population has recovered
+- **regenerationTimePlanted:** Time since the previous storm and before the planted population has recovered
+- **avgRegTimeNative:** Current average regeneration time for the native species
+- **avgRegTimePlanted:** Current average regeneration time for the planted species
+- **regTimeNativeCount:** Number of recovery times recorded for the native species
+- **regTimePlantedCount:** Number of recovery times recorded for the planted species
+- **avgLifespan:** Average lifespan of mature mangrove trees
 
-## Units
+## Using the Interface
 
-Diameters, radii, etc. are measured in centimeters (cm) and time is measured in days
+Before beginning the simulation, you'll notice that there are several input fields and controls that allow you to customize the parameters for the simulation. You can see their uses below:
+
+![UI Labels Page 1 Image](ui_labels1.gif)
+
+1. This is a 2D representation of the simulation. The brown areas are land, the blue areas are sea, the gray areas are residential, the green dots are native mangrove species, and the cyan dots are non-native mangroves. (Larger dots with darker colors represent more mature mangroves) On the lower left corner, the current population is displayed.
+2. The number of native species mangroves to begin with. They will start with random maturities.
+3. The number of non-native (planted) mangroves to begin. They will all start as seedlings.
+4. Controls how varied the allometric constants *alpha, beta,* and *gamma* will be from individual to individual.
+5. Reset simulation. Click this before clicking "Go".
+6. Begin the simulation. Click again to pause.
+7. Activate Terrain View. This will show the default view of the map on [1].
+8. Activate Salinity View. This will show salinity hotspots on the map [1].
+9. Number of days to simulate. (Not equal to the number of steps)
+10. Correlation Time. Parameter for generating spatiotemporally coloured noise.
+11. Diffusion Rate. Parameter for generating spatiotemporally coloured noise.
+12. Storms are scheduled as Poisson events (with Exponentially distributed number of days in between). This is the average number of days between storms
+13. Activate Inundation View. This will show tidal inundation hotspots on the map [1].
+14. The number of blocks that will be affected by storms. The higher this is, the more devestating storms will be.
+15. Activate Recruitment Chance View. This will show the recruitment chance of each patch on the map [1]. (Cyan = higher recruitment chance)
+16. Activate Big Patch View. This will show how the map [1] is divided into "big patches". regions.
+17. Activate Mortality View. This will show which occupied patches have plants with higher chances of dying from natural causes (Darker = higher probability of dying)
+18. Relative filename of the features file, which should contain information about the features on the map.
+19. Relative filename of the distances file, which should contain information about the distance of each patch from the ocean/sea.
+20. Switches to control which allometric parameters to vary among individual agents.
+21. Number of days simulated
+22. When the next storm will occur
+23. Switch to control whether storms occur or not
+24. Population Graph. It shows the number of mangroves of each species over time. The red dots are when storms happen.
+25. Determines how much the chances of dying from a storm is mitigated by the number of neighbors a tree has.
+26. How big mangroves are drawn on the map [1]. This has nothing to do with the internals of the simulation.
+27. Graph of population, broken down by maturity levels (seedling, sapling, tree)
+28. Graph of average tree diameter over time
+29. Graph of average tree age over time
+30. Graph of recorded regeneration times over time
+31. Graph of number of mangroves killed by storms over time
+
+![UI Labels Page 2 Image](ui_labels2.gif)
 @#$#@#$#@
 default
 true
