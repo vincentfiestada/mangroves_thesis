@@ -839,7 +839,7 @@ mangrove-display-scale
 mangrove-display-scale
 1
 20
-13
+4
 1
 1
 NIL
@@ -1354,6 +1354,10 @@ Before beginning the simulation, you'll notice that there are several input fiel
 31. Graph of number of mangroves killed by storms over time
 
 ![UI Labels Page 2 Image](ui_labels2.gif)
+
+## Contact Us
+
+You can find out more about this model, or get the latest version, from [the repository](https://github.com/vincentfiestada/mangroves_thesis/). Or send us an email at [vffiestada@up.edu.ph](mailto:vffiestada@up.edu.ph) or [aalorbis@gmail.com](aalorbis@gmail.com).
 @#$#@#$#@
 default
 true
