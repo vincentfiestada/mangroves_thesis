@@ -1,0 +1,221 @@
+%  SCL LaTeX Poster Style File.
+%  20170203 v1.1.0
+%  Copyright 2015-2017 by John Justine S. Villar <john_justine.villar@up.edu.ph>
+
+%-----------------------------------------------
+% Language, Encoding and Fonts
+%-----------------------------------------------
+% Select encoding of your inputs. Depends on
+% your operating system and its default input
+% encoding. Typically, you should use
+%   Linux  : utf8 (most modern Linux distributions)
+%            latin1 
+%   Windows: ansinew
+%            latin1 (works in most cases)
+%   Mac    : applemac
+% Notice that you can manually change the input
+% encoding of your files by selecting "save as"
+% an select the desired input encoding. 
+\usepackage[utf8]{inputenc}
+% Make latex understand and use the typographic
+% rules of the language used in the document.
+\usepackage[english]{babel}
+% Use the vector font Latin Modern which is going
+% to be the default font in latex in the future.
+\usepackage{lmodern}
+% Change the default font family from roman to sans serif
+\renewcommand{\familydefault}{\sfdefault} % for text
+% Choose the font encoding
+\usepackage[T1]{fontenc}
+
+\usepackage{setspace}
+\let\oldbibliography\thebibliography
+\renewcommand{\thebibliography}[1]{\oldbibliography{#1}
+\setlength{\itemsep}{0pt}} 
+
+
+%-----------------------------------------------
+% Colors
+%-----------------------------------------------
+\selectcolormodel{RGB}
+\definecolor{UPmaroon}{RGB}{142,23,26}
+\definecolor{UPgreen}{RGB}{1,68,33}
+\definecolor{SCLdarkblue}{RGB}{29,63,88}
+\definecolor{SCLdarkblue1}{RGB}{0,38,93}
+\definecolor{SCLdarkblue2}{RGB}{0,46,90}
+\definecolor{SCLdarkblue3}{RGB}{16,55,87}
+\definecolor{SCLlightblue}{RGB}{0,105,168}
+\definecolor{SCLgray}{RGB}{180,185,190}
+\definecolor{SCLgraytext}{RGB}{70,65,60}
+\definecolor{SCLgrayblue}{RGB}{84,97,110}
+\definecolor{tc}{RGB}{158,52,32}
+\definecolor{purple}{RGB}{100,0,100}
+\definecolor{sbrown}{RGB}{97,47,12}
+
+\DeclareOption{SCLcolors}{
+\colorlet{scltopheadercolor}{SCLdarkblue!50!SCLlightblue}
+\colorlet{sclbgcolor}{SCLgrayblue!55}
+\colorlet{sclbordercolor}{SCLdarkblue!50!SCLlightblue}
+\colorlet{sclheadercolor}{SCLdarkblue!50!SCLlightblue}
+\colorlet{sclboxcolor}{white}
+\colorlet{sclalertcolor}{SCLlightblue}
+\colorlet{scltextcolor}{SCLgraytext!85}
+}
+
+\DeclareOption{SCLcolors1}{
+\colorlet{scltopheadercolor}{SCLdarkblue}
+\colorlet{sclbgcolor}{SCLgrayblue!55}
+\colorlet{sclbordercolor}{UPgreen}
+\colorlet{sclheadercolor}{UPgreen}
+\colorlet{sclboxcolor}{white}
+\colorlet{sclalertcolor}{UPgreen!50!white}
+\colorlet{scltextcolor}{SCLgraytext!85}
+}
+
+
+\DeclareOption{SCLcolors2}{
+\colorlet{scltopheadercolor}{SCLdarkblue}
+\colorlet{sclbgcolor}{SCLgrayblue!55}
+\colorlet{sclbordercolor}{tc!95!white}
+\colorlet{sclheadercolor}{tc!95!white}
+\colorlet{sclboxcolor}{white}
+\colorlet{sclalertcolor}{tc!95!white}
+\colorlet{scltextcolor}{SCLgraytext!85}
+}
+
+\DeclareOption{SCLcolors3}{
+\colorlet{scltopheadercolor}{SCLdarkblue}
+\colorlet{sclbgcolor}{SCLgrayblue!55}
+\colorlet{sclbordercolor}{purple}
+\colorlet{sclheadercolor}{purple}
+\colorlet{sclboxcolor}{white}
+\colorlet{sclalertcolor}{purple}
+\colorlet{scltextcolor}{SCLgraytext!85}
+}
+
+
+\DeclareOption{SCLcolors4}{
+\colorlet{scltopheadercolor}{SCLdarkblue}
+\colorlet{sclbgcolor}{SCLgrayblue!55}
+\colorlet{sclbordercolor}{SCLlightblue}
+\colorlet{sclheadercolor}{SCLlightblue}
+\colorlet{sclboxcolor}{white}
+\colorlet{sclalertcolor}{SCLlightblue}
+\colorlet{scltextcolor}{SCLgraytext!85}
+}
+
+\DeclareOption{SCLcolors5}{
+\colorlet{scltopheadercolor}{SCLdarkblue}
+\colorlet{sclbgcolor}{SCLgrayblue!55}
+\colorlet{sclbordercolor}{black!70}
+\colorlet{sclheadercolor}{black!70}
+\colorlet{sclboxcolor}{white}
+\colorlet{sclalertcolor}{red!95!white}
+\colorlet{scltextcolor}{SCLgraytext!85}
+}
+
+\DeclareOption{UPcolors}{
+\colorlet{scltopheadercolor}{UPmaroon}
+\colorlet{sclbgcolor}{SCLgray!80}
+\colorlet{sclbordercolor}{UPgreen}
+\colorlet{sclheadercolor}{UPgreen}
+\colorlet{sclboxcolor}{white}
+\colorlet{sclalertcolor}{UPgreen}
+\colorlet{scltextcolor}{SCLgraytext!80}
+}
+
+\ProcessOptions\relax
+
+
+%-----------------------------------------------
+% Mathematics
+%-----------------------------------------------
+% Defines new environments such as equation,
+% align and split 
+\usepackage{amsmath}
+% Adds new math symbols
+\usepackage{amssymb}
+
+%-----------------------------------------------
+% Graphics and Tables
+%-----------------------------------------------
+% You cannot use floats in the baposter theme.
+% We therefore load the caption package which provides
+% the command \captionof
+% Set up how figure and table captions are displayed
+\usepackage{caption}
+\captionsetup{
+  font={color=scltextcolor,small},% set font size to footnotesize
+  labelfont={color=black,bf} % bold label (e.g., Figure 3.2) font
+}
+% Make the standard latex tables look so much better
+\usepackage{array,booktabs}
+% For creating beautiful plots
+\usepackage{pgfplots}
+
+
+% Easier configuration of lists
+\usepackage{enumitem}
+%configure itemize
+\setlist{%
+  topsep=0pt,% set space before and after list
+  noitemsep,% remove space between items
+  labelindent=\parindent,% set the label indentation to the paragraph indentation
+  leftmargin=*,% remove the left margin
+  font=\color{sclheadercolor}\normalfont, %set the colour of all bullets, numbers and descriptions to aaublue1
+}
+% use set<itemize,enumerate,description> if you have an older latex distribution
+\setitemize[1]{label={\raise1.25pt\hbox{$\blacktriangleright$}}}
+\setitemize[2]{label={\scriptsize\raise1.25pt\hbox{$\blacktriangleright$}}}
+\setitemize[3]{label={\raise1.25pt\hbox{$\star$}}}
+\setitemize[4]{label={-}}
+%\setenumerate[1]{label={\theenumi.}}
+%\setenumerate[2]{label={(\theenumii)}}
+%\setenumerate[3]{label={\theenumiii.}}
+%\setenumerate[4]{label={\theenumiv.}}
+%\setdescription{font=\color{aaublue1}\normalfont\bfseries}
+
+% use setlist[<itemize,enumerate,description>,<level>] if you have a newer latex distribution
+%\setlist[itemize,1]{label={\raise1.25pt\hbox{$\blacktriangleright$}}}
+%\setlist[itemize,2]{label={\scriptsize\raise1.25pt\hbox{$\blacktriangleright$}}}
+%\setlist[itemize,3]{label={\raise1.25pt\hbox{$\star$}}}
+%\setlist[itemize,4]{label={-}}
+%\setlist[enumerate,1]{label={\theenumi.}}
+%\setlist[enumerate,2]{label={(\theenumii)}}
+%\setlist[enumerate,3]{label={\theenumiii.}}
+%\setlist[enumerate,4]{label={\theenumiv.}}
+%\setlist[description]{font=\color{aaublue1}\normalfont\bfseries}
+
+%-----------------------------------------------
+% Miscelaneous
+%-----------------------------------------------
+% change/remove some names
+\addto{\captionsenglish}{
+  %remove the title of the bibliograhpy
+  \renewcommand{\refname}{\vspace{-0.7em}}
+  %change Figure to Fig. in figure captions
+  \renewcommand{\figurename}{Fig.}
+}
+% create links
+\usepackage{url}
+%note that the hyperref package is currently incompatible with the baposter class
+
+% Header Background
+\background{
+  \begin{tikzpicture}[remember picture,overlay]%
+    %the poster background color
+    \fill[fill=sclbgcolor] (current page.north west) rectangle (current page.south east);
+    %the header
+    \fill [fill=scltopheadercolor] (current page.north west) rectangle ([yshift=-\headerheight] current page.north east);
+  \end{tikzpicture}
+}
+
+%-----------------------------------------------
+% Macros
+%-----------------------------------------------
+\newcommand{\alert}[1]{{\color{sclalertcolor}#1}}
+
+\newcommand{\dcsscllogowhite}[0]{  \includegraphics[height=0.45\headerheight]{graphics/dcslogo}
+  \includegraphics[height=0.45\headerheight]{graphics/scllogowhite}}
+\newcommand{\dcsscllogo}[0]{  \includegraphics[height=0.45\headerheight]{graphics/dcslogo}
+  \includegraphics[height=0.45\headerheight]{graphics/scllogo}}
