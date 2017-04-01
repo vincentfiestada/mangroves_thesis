@@ -409,7 +409,7 @@ end
 
 to-report effective-parameter [a vary]
   ifelse vary = True [
-    report a - range-offset + random-float (2 * (a + range-offset))
+    report a - range-offset + random-float (a + range-offset)
   ][
     report a
   ]
