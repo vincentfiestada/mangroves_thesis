@@ -1,0 +1,16 @@
+gis-features-filename
+gis-distances-filename
+initial-native-population
+initial-planted-population
+max-days
+correlation-time
+diffusion-rate
+range-offset
+allow-storms
+storm-beta
+storm-strength
+tree-protect
+mangrove-display-scale
+v-alpha
+v-beta
+v-gamma

@@ -246,8 +246,8 @@ to init-native [move]
   set alpha effective-parameter 0.95 v-alpha
   set beta effective-parameter 2.0 v-beta
   set gamma effective-parameter 1.0 v-gamma
-  set dmax 70
-  set omega 3
+  set dmax 60
+  set omega 1
   set buffSalinity 0.70
   set buffInundation 0.70
   set buffCompetition 1.00
@@ -269,13 +269,13 @@ to init-native [move]
 end
 
 to init-planted [move]
-  set diameter 0.5
+  set diameter 0.7
   set age 0.0
   set alpha effective-parameter 0.5 v-alpha
   set beta effective-parameter 2.0 v-beta
   set gamma effective-parameter 1.0 v-gamma
   set dmax 70
-  set omega 5
+  set omega 1
   set buffSalinity 1.00
   set buffInundation 1.00
   set buffCompetition 1.00
@@ -501,7 +501,7 @@ to plant-baby
   if roll < recruitmentChance or recruitmentChance >= 1.0 [
     let parent min-one-of mangroves with [diameter >= 5] [distance myself]
     if parent = nobody [
-      set parent one-of mangroves with [species = "planted"]
+      set parent one-of mangroves with [species = "planted" and diameter >= 5]
     ]
     ifelse parent != nobody [
       sprout-mangroves 1 [
@@ -512,7 +512,7 @@ to plant-baby
         ifelse spec = "native" [
           init-native False
         ][
-        init-planted False
+          init-planted False
         ]
         setxy pxcor pycor
         inherit parent
@@ -590,6 +590,18 @@ to-report native-patches
   report patches with [ features = 3 and fertility > 0 and occupied = False ]
 end
 
+to-report free-patches
+  report patches with [fertility > 0 and occupied = False]
+end
+
+to-report natives
+  report mangroves with [species = "native"]
+end
+
+to-report planteds
+  report mangroves with [species = "planted"]
+end
+
 to-report crown-radius
   report 11.1 * diameter ^ 0.65
 end
@@ -597,9 +609,14 @@ end
 to move-to-native-patch
   let x-tmp 0
   let y-tmp 0
-  ask one-of native-patches [
+  let target one-of native-patches
+  if target = nobody [
+    set target one-of free-patches
+  ]
+  ask target [
     set x-tmp pxcor
     set y-tmp pycor
+    set occupied True
   ]
   setxy x-tmp y-tmp
 end
@@ -607,9 +624,14 @@ end
 to move-to-planted-patch
   let x-tmp 0
   let y-tmp 0
-  ask one-of planted-patches [
+  let target one-of planted-patches
+  if target = nobody [
+    set target one-of free-patches
+  ]
+  ask target [
     set x-tmp pxcor
     set y-tmp pycor
+    set occupied True
   ]
   setxy x-tmp y-tmp
 end
@@ -712,6 +734,32 @@ to recolor-patches-by-mortality
     ]
   ]
   set dynamicView 2
+end
+
+; Pick a scenario
+to load-scenario
+  file-close-all
+  file-open word word "scenarios/" scenario ".txt" ; Open scenario file
+
+  ; Load settings
+  set gis-features-filename file-read-line
+  set gis-distances-filename file-read-line
+  set initial-native-population read-from-string file-read-line
+  set initial-planted-population read-from-string file-read-line
+  set max-days read-from-string file-read-line
+  set correlation-time read-from-string file-read-line
+  set diffusion-rate read-from-string file-read-line
+  set range-offset read-from-string file-read-line
+  set allow-storms read-from-string file-read-line
+  set storm-beta read-from-string file-read-line
+  set storm-strength read-from-string file-read-line
+  set tree-protect read-from-string file-read-line
+  set mangrove-display-scale read-from-string file-read-line
+  set v-alpha read-from-string file-read-line
+  set v-beta read-from-string file-read-line
+  set v-gamma read-from-string file-read-line
+
+  file-close
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -820,10 +868,10 @@ correlation-time
 Number
 
 INPUTBOX
-665
-175
-821
-235
+668
+174
+824
+234
 diffusion-rate
 1
 1
@@ -1028,9 +1076,9 @@ Number
 
 PLOT
 13
-528
+626
 720
-911
+1009
 Population by Maturity
 Time
 Mangroves
@@ -1042,19 +1090,19 @@ true
 true
 "" ""
 PENS
-"Native Seedlings" 1.0 0 -8732573 true "" "plot count mangroves with [species = \"native\" and diameter < 2.5]"
-"Native Saplings" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\" and diameter >= 2.5 and diameter < 5.0]"
-"Native Trees" 1.0 0 -14333415 true "" "plot count mangroves with [species = \"native\" and diameter >= 5.0]"
-"Planted Seedlings" 1.0 0 -11033397 true "" "plot count mangroves with [species = \"planted\" and diameter < 2.5]"
-"Planted Saplings" 1.0 0 -14454117 true "" "plot count mangroves with [species = \"planted\" and diameter >= 2.5 and diameter < 5]"
-"Planted Trees" 1.0 0 -15582384 true "" "plot count mangroves with [species = \"planted\" and diameter > 5.0]"
+"Native Seedlings" 1.0 0 -8330359 true "" "plot count mangroves with [species = \"native\" and diameter < 2.5]"
+"Native Saplings" 1.0 0 -8732573 true "" "plot count mangroves with [species = \"native\" and diameter >= 2.5 and diameter < 5.0]"
+"Native Trees" 1.0 0 -15040220 true "" "plot count mangroves with [species = \"native\" and diameter >= 5.0]"
+"Planted Seedlings" 1.0 0 -8275240 true "" "plot count mangroves with [species = \"planted\" and diameter < 2.5]"
+"Planted Saplings" 1.0 0 -11033397 true "" "plot count mangroves with [species = \"planted\" and diameter >= 2.5 and diameter < 5]"
+"Planted Trees" 1.0 0 -14454117 true "" "plot count mangroves with [species = \"planted\" and diameter > 5.0]"
 "Storm" 1.0 1 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 
 PLOT
 732
-525
+623
 1321
-754
+852
 Average Tree DBH
 Time
 Ave. Diameter
@@ -1070,9 +1118,9 @@ PENS
 
 PLOT
 732
-760
+858
 1318
-910
+1008
 Average Tree Age
 Time
 Age
@@ -1088,9 +1136,9 @@ PENS
 
 PLOT
 15
-922
+1020
 822
-1136
+1234
 Regeneration Time
 Time
 Regeneration Time
@@ -1141,9 +1189,9 @@ count mangroves
 
 PLOT
 827
-922
+1020
 1319
-1135
+1233
 Killed by Storm
 Time
 Storm Victims
@@ -1200,7 +1248,7 @@ storm-strength
 storm-strength
 0
 5
-1
+2
 1
 1
 NIL
@@ -1213,7 +1261,7 @@ SWITCH
 508
 v-alpha
 v-alpha
-1
+0
 1
 -1000
 
@@ -1234,7 +1282,7 @@ SWITCH
 508
 v-beta
 v-beta
-1
+0
 1
 -1000
 
@@ -1245,9 +1293,46 @@ SWITCH
 508
 v-gamma
 v-gamma
-1
+0
 1
 -1000
+
+CHOOSER
+16
+566
+169
+611
+scenario
+scenario
+"default" "nativesOnly" "plantedsOnly" "nativesSmall" "plantedsSmall" "equalPopulations" "island"
+0
+
+TEXTBOX
+16
+534
+182
+557
+Scenario Picker:
+22
+102.0
+1
+
+BUTTON
+181
+566
+311
+612
+Load Scenario
+load-scenario
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 # Mangroves Thesis

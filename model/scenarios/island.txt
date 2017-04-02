@@ -1,0 +1,16 @@
+island_features.asc
+island_distance.asc
+300
+600
+20000
+1
+1
+0.25
+True
+8212
+2
+0.13
+4
+True
+True
+True
