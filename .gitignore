@@ -9,4 +9,5 @@
 **/*.log
 **/*.blg
 **/*.pyc
+**/*.synctex.gz
 software/out/*
