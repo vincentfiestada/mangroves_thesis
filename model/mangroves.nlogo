@@ -806,7 +806,7 @@ INPUTBOX
 657
 234
 range-offset
-0.25
+0
 1
 0
 Number
@@ -851,7 +851,7 @@ INPUTBOX
 819
 84
 max-days
-20000
+10000
 1
 0
 Number
@@ -862,7 +862,7 @@ INPUTBOX
 820
 160
 correlation-time
-1
+0.25
 1
 0
 Number
@@ -873,7 +873,7 @@ INPUTBOX
 824
 234
 diffusion-rate
-1
+0.25
 1
 0
 Number
@@ -1248,7 +1248,7 @@ storm-strength
 storm-strength
 0
 5
-2
+1
 1
 1
 NIL
@@ -1754,6 +1754,179 @@ NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="More Planted" repetitions="4" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>simulate</go>
+    <metric>count natives</metric>
+    <metric>count planteds</metric>
+    <metric>avgRegTimeNative</metric>
+    <metric>avgRegTimePlanted</metric>
+    <enumeratedValueSet variable="max-days">
+      <value value="10000"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="range-offset" first="0" step="0.25" last="0.75"/>
+    <enumeratedValueSet variable="mangrove-display-scale">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-planted-population">
+      <value value="600"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-native-population">
+      <value value="300"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="allow-storms">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="gis-features-filename">
+      <value value="&quot;bani_features.asc&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="gis-distances-filename">
+      <value value="&quot;bani_distance.asc&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-alpha">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-beta">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-gamma">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="correlation-time" first="0.25" step="0.25" last="1"/>
+    <steppedValueSet variable="diffusion-rate" first="0.25" step="0.25" last="1"/>
+    <enumeratedValueSet variable="storm-beta">
+      <value value="8212"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="tree-protect">
+      <value value="0.13"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="scenario">
+      <value value="&quot;default&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="storm-strength">
+      <value value="1"/>
+      <value value="2"/>
+      <value value="3"/>
+      <value value="4"/>
+      <value value="5"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="More Natives" repetitions="4" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>simulate</go>
+    <metric>count natives</metric>
+    <metric>count planteds</metric>
+    <metric>avgRegTimeNative</metric>
+    <metric>avgRegTimePlanted</metric>
+    <enumeratedValueSet variable="max-days">
+      <value value="10000"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="range-offset" first="0" step="0.25" last="0.75"/>
+    <enumeratedValueSet variable="mangrove-display-scale">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-planted-population">
+      <value value="300"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-native-population">
+      <value value="600"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="allow-storms">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="gis-features-filename">
+      <value value="&quot;bani_features.asc&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="gis-distances-filename">
+      <value value="&quot;bani_distance.asc&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-alpha">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-beta">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-gamma">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="correlation-time" first="0.25" step="0.25" last="1"/>
+    <steppedValueSet variable="diffusion-rate" first="0.25" step="0.25" last="1"/>
+    <enumeratedValueSet variable="storm-beta">
+      <value value="8212"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="tree-protect">
+      <value value="0.13"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="scenario">
+      <value value="&quot;default&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="storm-strength">
+      <value value="1"/>
+      <value value="2"/>
+      <value value="3"/>
+      <value value="4"/>
+      <value value="5"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="Equal Populations" repetitions="4" runMetricsEveryStep="true">
+    <setup>setup</setup>
+    <go>simulate</go>
+    <metric>count natives</metric>
+    <metric>count planteds</metric>
+    <metric>avgRegTimeNative</metric>
+    <metric>avgRegTimePlanted</metric>
+    <enumeratedValueSet variable="max-days">
+      <value value="10000"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="range-offset" first="0" step="0.25" last="0.75"/>
+    <enumeratedValueSet variable="mangrove-display-scale">
+      <value value="4"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-planted-population">
+      <value value="450"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-native-population">
+      <value value="450"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="allow-storms">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="gis-features-filename">
+      <value value="&quot;bani_features.asc&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="gis-distances-filename">
+      <value value="&quot;bani_distance.asc&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-alpha">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-beta">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="v-gamma">
+      <value value="true"/>
+    </enumeratedValueSet>
+    <steppedValueSet variable="correlation-time" first="0.25" step="0.25" last="1"/>
+    <steppedValueSet variable="diffusion-rate" first="0.25" step="0.25" last="1"/>
+    <enumeratedValueSet variable="storm-beta">
+      <value value="8212"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="tree-protect">
+      <value value="0.13"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="scenario">
+      <value value="&quot;default&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="storm-strength">
+      <value value="1"/>
+      <value value="2"/>
+      <value value="3"/>
+      <value value="4"/>
+      <value value="5"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
