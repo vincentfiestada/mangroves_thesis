@@ -1,0 +1,191 @@
+To create the model, we draw heavily on an existing mathematical model
+of mangrove growth by Salmo and Juanico \cite{SalmoJuanico2015} and make improvements to
+an agent-based implementation by Ang and Mariano \cite{mangrovesAngMariano}. Stochasticity
+has been added by generating spatiotemporal colored noise for seedling
+dispersal; spatial inheritance is simulated by a variance in allometric
+attributes of individual mangrove agents. The model is implemented in
+NetLogo and allows for a high level of customization.
+
+Other improvements include differentiation among the recruitment of
+viviparous species and increased resistance to storm damage among
+clustered trees.
+
+The model aims to be a generalized model of growth or regeneration of a
+hetero-specific mangrove forest in a fragmented habitat. In particular,
+the \emph{Avicennia, Sonneratia,} and \emph{Rhizophora} species are
+investigated in a virtual analog of the Bangrin Marine Protected Area in
+Bani, Pangasinan.
+
+\subsection{Agents}
+
+The main agent being modeled is the mangrove plant. These mangrove agents
+have a single state variable that determines their growth and maturity:
+the diameter at breast height of the mangrove, which we will refer to
+as\(D\). Empirical data can be used to allometrically relate D to other
+factors such as tree height and weight \cite{Hiebeler2000}.
+
+\subsubsection{Agent Classification}
+
+Agents can be classified in two ways: by species and by maturity. As the
+model deals with hetero-specific forests, the behavior of mangrove
+agents is modified by species-specific parameters. Mangroves are also
+divided into maturity levels. In Ang and Mariano {[}7{]}, there were
+three maturity levels (dependent on\(D\)) ranging from seedling to tree,
+with different mortality rates tied to each maturity level per species.
+
+Instead, we forego the species-specific mortality rates. The chances
+that a tree will die from natural causes is now tied solely to its\(D\).
+In \cite{mangrovesAngMariano}, \emph{Sonneratia} and \emph{Avicennia} trees (with
+\(D \geq 5\)cm) had a 0.166 chance of dying from natural causes; for
+saplings (\(D \in \lbrack 2.5,5)\)), it was 0.2, and for seedlings
+(\(D \in \lbrack 0.5,2.5)\)), it was 0.4. \emph{Rhizophora} had slightly
+higher mortality rates for each maturity level. The same general trend
+of higher mortality for less mature plants is followed all mangroves. In
+the present model, we obtain a Lagrange interpolated mortality rate from
+these values, so that a plant's chances of dying from natural causes
+gradually but steadily declines as its\(D\)increases.
+
+\subsection{Spatial Units}
+
+The model simulates mangrove agents in a closed patch grid consisting of
+some land area and sea area, separated by an arbitrarily shaped coast.
+
+\subsubsection{Coastal Distance}
+
+Salinity and tidal inundation responses are approximately dependent on
+distance from the coast. The farther from the coast a patch is, the less
+inundated and the less saline it should be due to having less exposure
+to seawater.
+
+Each patch thus has a specific inundation and salinity effect to the
+growth of the mangrove plant on it.
+
+\subsection{Variables}
+
+The model's determination of individual mangrove growth follows the
+differential equation proposed by Salmo and Juanico {[}1{]}. The
+deterministic change in D with respect to time is as follows:
+
+
+\begin{dmath}
+\frac{\text{dD}}{\text{dt}} = (\frac{\Omega}{2 + \alpha})D^{\beta - \alpha - 1}\lbrack 1 - \frac{1}{\gamma}{(\frac{D}{D_{\max}})}^{1 + \alpha}\rbrack \times \sigma(x,y) \times \eta(x,y) \times K(x,y)
+\end{dmath}
+
+
+\(\alpha\)- allometric constant relating D to tree height
+
+\(\beta\)- allometric constant relating D to crown radius
+
+\(\Omega\)- conversion factor that harmonizes both sides of the equation
+
+\(\gamma\)- species-specific constant related to maximum height
+
+\(D_{\max}\)- species-specific constant indicating maximum attainable D
+
+\(\sigma(x,y)\)- response to salinity
+
+\(\eta(x,y)\)- response to inundation
+
+\(K(x,y)\)- response to competition from nearby mangroves
+
+Salmo and Juanico also provide formulas for calculating the responses to
+salinity, tidal inundation and competition from patch values and
+neighborhood characteristics. The authors have left these unchanged.
+
+The allometric parameters\(\alpha\), \(\beta\)and \(\gamma\)will be
+species-specific but will also vary randomly among individuals of the
+same species. The values will be inherited directly by seedlings and
+will simulate fitness and spatial inheritance, as optimal values for
+each patch should be selected for. Spatial inheritance is a phenomenon
+in which genetically related individuals ``inherit'' a habitat or
+continue to thrive in an area for multiple generations. This occurs when
+organisms do not disperse far and become highly suited to an area \cite{Schauber2007}.
+
+\subsubsection{Recruitment}
+
+Each unoccupied, livable patch has a chance of recruiting a seedling.
+Initially, the chances of recruitment is zero for all patches. When a
+mangrove reaches maturity (becomes a tree with diameter of at least 5
+cm), the recruitment chance for its patch becomes 0.5. The recruitment
+chance\(\Pi\)for all other patches changes as governed by the following
+equation.
+
+$$\frac{d\Pi}{\text{dt}} = \frac{- 1}{\tau}(1 - \lambda^{2}\nabla^{2})\Pi + \frac{1}{\tau}\omega$$
+
+with $\Pi_{0} = 0$
+
+Here, $\omega_{i}$ is a white noise term that follows Brownian motion.
+It can be easily generated independently for each patch for every
+step\(i\)of the simulation. For each patch,
+
+$$\omega_{i} = \omega_{i - 1} + Normal(0,dt)$$
+
+with $\omega_{0} = 0$
+
+
+$nabla^{2}\Pi = \Pi_{\text{xx}} + \Pi_{\text{yy}}$ can be approximated
+using the finite difference method. For the boundaries, we may assume
+that recruitment does not occur (this is not such a big problem since
+the map used is bounded by water and area not part of the coastal
+woodlands). At step \(i\)of the simulation, let the recruitment chance
+at a livable, unoccupied patch \(j,k\) be
+
+\begin{dmath}
+\Pi_{j,k}^{i} = \Pi_{j,k}^{i - 1} + dt\lbrack(\frac{- 1}{\tau})\Pi_{j,k}^{i - 1} + (\frac{\lambda^{2}}{\tau})\frac{\Pi_{j + 1,k}^{i - 1} - 2\Pi_{j,k}^{i - 1} + \Pi_{j - 1,k}^{i - 1}}{{(\Delta x)}^{2}} + (\frac{\lambda^{2}}{\tau})\frac{\Pi_{j,k + 1}^{i - 1} - 2\Pi_{j,k}^{i - 1} + \Pi_{j,k - 1}^{i - 1}}{{(\Delta y)}^{2}} + \frac{1}{\tau}\omega_{j,k}^{i}\rbrack
+\end{dmath}
+
+The values for the correlation time and length are varied throughout the
+experiments.
+
+\subsection{Process Overview}
+The simulation is initialized by creating the virtual environment (with
+salinity and inundation values calculated for each patch using their
+distance from the sea) and planting the initial populations or
+mangroves.
+
+During each step, a Poisson-distributed random time interval
+\(\text{dt}\)with a mean of 1 day is generated as per \cite{SalmoJuanico2015}. Each
+agent/mangrove grows in diameter according to the growth equation and
+proportionally to\(\text{dt}\); that is, the change in diameter during a
+step in the simulation is calculated
+as\(\frac{\text{dD}}{\text{dt}}dt = dD\).
+
+During the same step, the recruitment chance for each patch is
+recalculated. A randomly selected mangrove may die from ``natural
+causes'', with a probability dependent on its maturity. A randomly
+selected patch may also recruit a new seedling dependent on its
+recruitment chance.
+
+Storms also occur as a Poisson process. Each mature tree, irrespective
+of species, has a probability of dying equal to\(0.7 - kn\),
+where\(k\)is a parameter of the simulation and\(n\)is the number of
+neighboring trees within the focal tree's field of neighborhood. Smaller
+plants have a 0.1 chance of dying.
+
+\subsection{Design Concepts}
+
+Storms and death are both modeled as natural Poisson processes with
+varying rates depending on species and maturity. Seedling dispersal is
+modeled as diffusion using spatiotemporal colored noise.
+
+\subsubsection{Emergence and Adaptation}
+The model can simulate the emergence of a naturally-selected population
+of mangroves over several generations, affected by both the
+fragmentation of the mangrove forest (plants are not uniformly
+distributed) and the properties of the plants themselves. It will thus
+be able to take into account the effects of having multiple species and
+an arbitrary landscape.
+
+The variations in the properties of each individual agent or plant, as
+well as the tendency for plants that are more fit to survive longer and
+have more offspring will simulate spatial selection within the
+population.
+
+\subsubsection{Interaction}
+Plant agents interact with each other by competing for resources, which
+affects growth, and thus also influences mortality rates. The more
+neighbors around it a plant has, the slower it should grow, and thus the
+greater the chances of it dying during each step. However, having more
+neighbors also reduces the mortality rate of the tree during storms,
+since having more neighbors distributes the force and damage inflicted
+by the storm.

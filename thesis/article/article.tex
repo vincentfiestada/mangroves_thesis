@@ -1,0 +1,39 @@
+\documentclass[a4paper]{scl-article}
+\usepackage{amsmath,amssymb,graphicx,array,multirow,float,multicol,breqn}
+
+\begin{document}
+
+\title{A Stochastic Agent-based Model for Mangrove Forest Regrowth}
+
+\author{Andrew Vince Lorbis, Vincent Paul Fiestada, Vena Pearl Bongolan, Ph.D.\fnote{Corresponding Author. Email: \texttt{vabongolan@dcs.upd.edu.ph}}\\
+Scientific Computing Laboratory\\
+Department of Computer Science\\
+University of the Philippines\\
+1101 Diliman, Quezon City
+}
+
+\maketitle
+
+\begin{abstract}
+    \input{abstract}
+\end{abstract}
+
+\begin{multicols}{2}
+\input{intro}
+\section{Mangroves as Crucial and Fragile Species}
+\input{section1}
+\section{Block Disturbance and Fragmented Habitat}
+\input{section2}
+\section{Generation of Spatiotemporal Colored Noise}
+\input{section3}
+\section{Model Overview, Design concepts, and Details}
+\input{odd}
+\section{Results and Discussion}
+\input{results}
+\end{multicols}
+
+\label{sect:bib}
+\bibliographystyle{plain}
+\bibliography{mybib}
+
+\end{document}
