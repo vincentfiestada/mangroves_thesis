@@ -582,7 +582,7 @@ to storm
   ]
 
   ; Now that a storm has occurred, wait only 6 more years
-  set max-days ticks + 365 * 6
+  ; set max-days ticks + 365 * 6
 
 end
 
@@ -647,7 +647,9 @@ end
 
 to-report next-storm-schedule
   ; Get next storm schedule (in simulated days)
-  report days + random-exponential storm-beta
+  ; report days + random-exponential storm-beta
+  ; For experimentation, make it fixed:
+  report days + 8212
 end
 
 to recolor-mangrove
@@ -855,7 +857,7 @@ INPUTBOX
 819
 84
 max-days
-36500
+10403
 1
 0
 Number
@@ -1759,7 +1761,7 @@ NetLogo 5.3.1
 @#$#@#$#@
 @#$#@#$#@
 <experiments>
-  <experiment name="More Planted" repetitions="3" runMetricsEveryStep="true">
+  <experiment name="More Planted" repetitions="4" runMetricsEveryStep="true">
     <setup>setup</setup>
     <go>simulate</go>
     <metric>count natives</metric>
@@ -1767,7 +1769,7 @@ NetLogo 5.3.1
     <metric>avgRegTimeNative</metric>
     <metric>avgRegTimePlanted</metric>
     <enumeratedValueSet variable="max-days">
-      <value value="36500"/>
+      <value value="10403"/>
     </enumeratedValueSet>
     <steppedValueSet variable="range-offset" first="0" step="0.25" last="0.75"/>
     <enumeratedValueSet variable="mangrove-display-scale">
