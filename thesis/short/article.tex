@@ -1,0 +1,38 @@
+\documentclass[a4paper]{scl-article}
+\usepackage{amsmath,amssymb,graphicx,array,multirow,float,multicol,breqn}
+\usepackage{xwatermark,tikz}
+
+%\newsavebox\mybox
+%\savebox\mybox{\tikz[color=gray,opacity=0.2]\node{DRAFT};}
+%\newwatermark[
+%  allpages,
+%  angle=45,
+%  scale=6,
+%  xpos=-20,
+%  ypos=15
+%]{\usebox\mybox}
+
+\begin{document}
+
+\title{A Stochastic Agent-based Model of Mangrove Forest Regrowth: A Summarized Report for CS 175}
+
+\author{Vincent Paul Fiestada, Andrew Vince Lorbis\\Adviser: Vena Pearl Bongolan, Ph.D.}
+
+\maketitle
+
+\begin{multicols}{2}
+\input{intro}
+\section{Model Overview, Design concepts, and Details}
+\input{odd}
+\section{Findings from Stochastic Experiments, Briefly}
+\input{results}
+
+Overall, however, the model is an example of how the stochastic processes discussed in CS 175 can be applied to complex systems--especially ones where a definite and complete idea of how the system behaves is difficult to come by. In complex systems such as mangrove forests, the conversion rates (such as mortality and birth) are always changing and difficult to predict without a vast amount of empirical data, which is admittedly hard to collect. Agent-based models allow for a robust simulation of such systems. Stochasticity allow these models to further take into consideration the many unaccounted-for variables that in reality may act upon the system being modelled.
+
+\end{multicols}
+
+\label{sect:bib}
+\bibliographystyle{plain}
+\bibliography{mybib}
+
+\end{document}
