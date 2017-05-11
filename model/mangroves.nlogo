@@ -1009,7 +1009,7 @@ PLOT
 93
 1322
 461
-Population
+Forest Cover
 Days
 Mangroves
 0.0
@@ -1020,9 +1020,9 @@ true
 true
 "" ""
 PENS
-"Natives" 1.0 0 -12087248 true "" "plot count mangroves with [species = \"native\"]"
-"Storms" 1.0 2 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
-"Planteds" 1.0 0 -14730904 true "" "plot count mangroves with [species = \"planted\"]"
+"Natives" 1.0 0 -12087248 true "" "plot current-coverage mangroves with [species = \"native\"]"
+"Storms" 1.0 2 -2674135 true "" "if caBeforeStormNative > 0 or caBeforeStormPlanted > 0 [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
+"Planteds" 1.0 0 -14730904 true "" "plot current-coverage mangroves with [species = \"planted\"]"
 
 SLIDER
 870
