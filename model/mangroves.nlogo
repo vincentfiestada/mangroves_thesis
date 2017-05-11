@@ -6,7 +6,7 @@ mangroves-own [diameter age alpha beta gamma omega dmax buffSalinity buffInundat
 
 patches-own [fertility salinity inundation oldRC recruitmentChance whiteNoise occupied dist features bigPatch]
 
-globals [deltaT gisDist gisFeatures trueSize resolution dynamicView days nextStorm stormOccurred stormKilled popBeforeStormNative popBeforeStormPlanted regenerationTimeNative regenerationTimePlanted avgRegTimeNative regTimeNativeCount avgRegTimePlanted regTimePlantedCount deaths avgLifespan]
+globals [deltaT gisDist gisFeatures trueSize resolution dynamicView days nextStorm stormOccurred stormKilled caBeforeStormNative caBeforeStormPlanted regenerationTimeNative regenerationTimePlanted avgRegTimeNative regTimeNativeCount avgRegTimePlanted regTimePlantedCount deaths avgLifespan]
 
 ;=>=>=>=>=>=>=><=<=<=<=<=<=<=
 ;      INITIALIZATION       ;
@@ -21,9 +21,9 @@ to setup
   if allow-storms = True [set nextStorm next-storm-schedule]
   set stormOccurred False
   set regenerationTimeNative 0
-  set popBeforeStormNative 0
+  set caBeforeStormNative 0
   set regenerationTimePlanted 0
-  set popBeforeStormPlanted 0
+  set caBeforeStormPlanted 0
   set avgRegTimeNative 0
   set regTimeNativeCount 0
   set avgRegTimePlanted 0
@@ -67,26 +67,25 @@ to simulate
     recolor-patches-by-mortality
   ]
   ; Check if regeneration is complete for both native & planted
-  ifelse count mangroves with [species = "native" and diameter >= 5] < popBeforeStormNative [
+  ifelse (current-coverage mangroves with [species = "native"]) < caBeforeStormNative [
     set regenerationTimeNative regenerationTimeNative + deltaT
   ][
-    if popBeforeStormNative > 0 [
-      print "Recovered :: Native"
+    if caBeforeStormNative > 0 [
       set avgRegTimeNative avgRegTimeNative + regenerationTimeNative
       set regTimeNativeCount regTimeNativeCount + 1
       set regenerationTimeNative 0
-      set popBeforeStormNative 0
+      set caBeforeStormNative 0
     ]
   ]
-  ifelse count mangroves with [species = "planted" and diameter >= 5] < popBeforeStormPlanted [
+  ifelse (current-coverage mangroves with [species = "planted"]) < caBeforeStormPlanted [
     set regenerationTimePlanted regenerationTimePlanted + deltaT
   ][
-    if popBeforeStormPlanted > 0 [
-      print "Recovered :: Planted"
+    if caBeforeStormPlanted > 0 [
+      ;print "Recovered :: Planted"
       set avgRegTimePlanted avgRegTimePlanted + regenerationTimePlanted
       set regTimePlantedCount regTimePlantedCount + 1
       set regenerationTimePlanted 0
-      set popBeforeStormPlanted 0
+      set caBeforeStormPlanted 0
     ]
   ]
   update-white-noise ; Update white noise term
@@ -104,12 +103,8 @@ to simulate
   ]
   ; If scheduled, make storm occur
   if allow-storms = True and days >= nextStorm [
-    ;set popBeforeStormNative popBeforeStormNative + (count mangroves with [species = "native" and diameter >= 5])
-    ;set popBeforeStormPlanted popBeforeStormPlanted + (count mangroves with [species = "planted" and diameter >= 5])
-    ;set popBeforeStormNative (count mangroves with [species = "native" and diameter >= 5])
-    ;set popBeforeStormPlanted (count mangroves with [species = "planted" and diameter >= 5])
-    set popBeforeStormNative max list popBeforeStormNative (count mangroves with [species = "native" and diameter >= 5])
-    set popBeforeStormPlanted max list popBeforeStormPlanted (count mangroves with [species = "planted" and diameter >= 5])
+    set caBeforeStormNative max list caBeforeStormNative (current-coverage mangroves with [species = "native"])
+    set caBeforeStormPlanted max list caBeforeStormPlanted (current-coverage mangroves with [species = "planted"])
     storm
     set nextStorm next-storm-schedule
     set stormOccurred True
@@ -144,6 +139,10 @@ to final-report
   print "Average Regeneration Time for Native Tree population: "
   ifelse avgRegTimeNative <= 0 [
     print "<<Infinity -- Never recovered>>"
+    print "Current Tree Coverage for Natives:"
+    print current-coverage mangroves with [species = "native"]
+    print "Pre-Storm Native Coverage:"
+    print caBeforeStormNative
   ][
     print avgRegTimeNative
   ]
@@ -151,6 +150,10 @@ to final-report
   print "Average Regeneration Time for Planted Tree population:"
   ifelse avgRegTimePlanted <= 0 [
     print "<<Infinity -- Never recovered>>"
+    print "Current Tree Coverage for Planteds:"
+    print current-coverage mangroves with [species = "planted"]
+    print "Pre-Storm Planted Coverage:"
+    print caBeforeStormPlanted
   ][
     print avgRegTimePlanted
   ]
@@ -181,6 +184,14 @@ to setup-patches
     set occupied False
   ]
   init-big-patches
+end
+
+to-report current-coverage [k]
+  let x 0
+  ask k [
+    set x x + crown-area
+  ]
+  report x
 end
 
 to init-big-patches
@@ -225,7 +236,7 @@ to plant-mangroves
   ; Plant mangroves
   create-mangroves initial-native-population [
     init-native True
-    set diameter diameter + random 5
+    set diameter 4 + random 2
     if diameter >= 5 [
       ask patch-here [
         set recruitmentChance 0.5
@@ -236,7 +247,16 @@ to plant-mangroves
   ]
   create-mangroves initial-planted-population [
     init-planted True
-    ask patch-here [set recruitmentChance 0]
+    ;ask patch-here [set recruitmentChance 0] ; !!!!!! COMMENT OUT IF YOU WANT PLANTEDS TO START WITH RANDOM MATURITIES !!!!!!
+    ;!!!!! ------- UNCOMMENT BELOW IF YOU WANT PLANTEDS TO START WITH RANDOM MATURITIES !!!!!!
+    set diameter 4 + random 2
+    if diameter >= 5 [
+      ask patch-here [
+        set recruitmentChance 0.5
+      ]
+    ]
+    set size visible-size
+    recolor-mangrove
   ]
 end
 
@@ -480,6 +500,10 @@ to-report chance-of-dying
   report p
 end
 
+to-report crown-area
+  report pi * (11.1 * diameter ^ 0.645) ^ 2
+end
+
 to reap-soul
   ; Randomly kill a plant
   let roll random-float 1.0
@@ -503,7 +527,7 @@ to plant-baby
     if parent = nobody [
       set parent one-of mangroves with [species = "planted" and diameter >= 5]
     ]
-    ifelse parent != nobody [
+    if parent != nobody [
       sprout-mangroves 1 [
         let spec "native"
         ask parent [
@@ -517,8 +541,6 @@ to plant-baby
         setxy pxcor pycor
         inherit parent
       ]
-    ][
-       print "No nearby parent found"
     ]
     set occupied True
   ]
@@ -649,7 +671,11 @@ to-report next-storm-schedule
   ; Get next storm schedule (in simulated days)
   ; report days + random-exponential storm-beta
   ; For experimentation, make it fixed:
-  report days + 8212
+  ifelse days = 0 [
+    report days + storm-beta
+  ][
+    report days + 1000000
+  ]
 end
 
 to recolor-mangrove
@@ -812,7 +838,7 @@ INPUTBOX
 657
 234
 range-offset
-0
+0.25
 1
 0
 Number
@@ -857,7 +883,7 @@ INPUTBOX
 819
 84
 max-days
-10403
+5000
 1
 0
 Number
@@ -1019,7 +1045,7 @@ INPUTBOX
 821
 302
 storm-beta
-8212
+1000
 1
 0
 Number
@@ -1254,7 +1280,7 @@ storm-strength
 storm-strength
 0
 5
-0
+2
 1
 1
 NIL
