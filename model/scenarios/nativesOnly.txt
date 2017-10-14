@@ -2,7 +2,7 @@ bani_features.asc
 bani_distance.asc
 900
 0
-20000
+5000
 1
 1
 0.25
@@ -14,3 +14,4 @@ True
 True
 True
 True
+False

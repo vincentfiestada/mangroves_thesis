@@ -2,7 +2,7 @@ island_features.asc
 island_distance.asc
 300
 600
-20000
+5000
 1
 1
 0.25
@@ -14,3 +14,4 @@ True
 True
 True
 True
+False

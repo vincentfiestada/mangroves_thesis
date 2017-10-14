@@ -1,0 +1,76 @@
+\documentclass{scl-ug-manuscript}
+\usepackage{UPnotations}
+\usepackage{amsmath,amssymb,graphicx,array,multirow,float,multicol,breqn}
+
+\begin{document}
+\title{A Stochastic Agent-based Model for Mangrove Forest Regrowth}
+\displaytitle{A Stochastic Agent-based Model for Mangrove Forest Regrowth}
+
+\twoauthorstrue
+\authorone{Vincent Paul Fiestada}
+\authortwo{Andrew Vince Lorbis}
+%\specializetrue
+\specialization{Geosciences}
+\submitmonth{June} 
+\submityear{2017} 
+
+%\twoadviserstrue %uncomment if true
+%\threeadviserstrue %uncomment if true
+%only three advisers supported (default = one adviser)
+\adviser{Vena Pearl Bongolan, Ph.D.}
+
+%\diffaffiliationstrue %uncomment if advisers from different depts
+\deptone{Department of Computer Science}
+\depttwo{Department Two}
+\deptthree{Department Three}
+
+\deptchair{Prospero C. Naval, Ph.D.} 
+
+\copyrighttrue
+
+%Abstract Page
+\abstractpage{
+	\input{abstract}
+}
+
+% Acknowledgments Page
+\acknowledgmentstrue
+\acknowledgements{
+	The authors would like to acknowledge the story of the sea snake, which has been used in copious amounts by their adviser. 
+} 
+
+% Preface
+%=========================
+\beforepreface
+\listoftables
+\listoffigures
+\afterpreface
+%=========================
+
+\include{intro}
+\chapter{Review of Related Literature}\label{rrl}
+\section{Mangroves as Crucial and Fragile Species}
+\input{section1}
+\section{Restoration Trajectories}
+\input{section11}
+\section{Block Disturbance and Fragmented Habitat}
+\input{section2}
+\section{Generation of Spatio-temporal Coloured Noise}
+\input{section3}
+\chapter{Methodology}
+The following serves as a description of the Overview, Design Concepts, and Details of the proposed model. The ODD is a standardised protocol used to describe agent-based models. It includes a detailed explanation of how each step in the simulation is carried out, what agents are being simulated, the effects of the virtual environment as well as the effects of the agents on each other.
+\input{odd}
+\chapter{Results and Discussion}
+\input{results}
+\chapter{Conclusion and Recommendations}
+\input{conclusions}
+
+% Guidelines for submission of manuscript
+%\include{submission}
+
+\ssp % single-space for back matter
+\nocite*
+\bibliographystyle{acm}
+\bibliography{references}
+
+\end{document}

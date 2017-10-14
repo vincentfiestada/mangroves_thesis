@@ -8,17 +8,17 @@ some land area and sea area.
 The main agent being modelled is the mangrove plant. These mangrove agents
 have a single state variable that determines their growth and maturity:
 the diameter at breast height of the mangrove, which will be referred to
-as\(D\). Empirical data can be used to allometrically relate D to other
+as \(D\). Empirical data can be used to allometrically relate $D$ to other
 factors such as tree height, foliage cover, and biomass \cite{Hiebeler2000}.
 
 Agents can be classified in two ways: by species and by maturity. As the
 model deals with multi-specific forests, the behaviour of mangrove
 agents is modified by species-specific parameters. Mangroves are also
-divided into maturity levels. In Ang and Mariano \cite{mangrovesAngMariano}, there were
-three maturity levels (dependent on\(D\)) ranging from seedling to tree,
+divided into maturity levels. In Ang and Mariano \cite{marovesAngMariano}, there were
+three maturity levels (dependent on $D$) ranging from seedling to tree,
 with different mortality rates tied to each maturity level per species. In
 the present model, we obtain a Lagrange interpolated mortality rate from
-the values used in \cite{mangrovesAngMariano}, so that a plant's chances of dying from natural causes gradually but steadily declines as its\(D\)increases.
+the values used in \cite{mangrovesAngMariano}, so that a plant's chances of dying from natural causes gradually but steadily declines as its $D$ increases.
 
 Salinity and tidal inundation responses are approximately dependent on
 distance from the coast. The farther from the coast a patch is, the less
@@ -54,7 +54,7 @@ Salmo and Juanico also provide formulas for calculating the responses to
 salinity, tidal inundation and competition from patch values and
 neighbourhood characteristics. The authors have left these unchanged.
 
-The allometric parameters\(\alpha\), \(\beta\)and \(\gamma\)will be
+The allometric parameters \(\alpha\), \(\beta\) and \(\gamma\) will be
 species-specific but may also vary randomly among individuals of the
 same species. The values will be inherited directly by seedlings and
 will simulate fitness and spatial inheritance, as optimal values for
@@ -67,7 +67,7 @@ Each unoccupied, liveable patch has a chance of recruiting a seedling.
 Initially, the chances of recruitment are zero for all patches. When a
 mangrove reaches maturity (becomes a tree with diameter of at least 5
 cm), the recruitment chance for its patch becomes 0.5. The recruitment
-chance\(\Pi\)for all other patches changes during each step as governed 
+chance \(\Pi\) for all other patches changes during each step as governed 
 by the following equation.
 
 $$\frac{d\Pi}{\text{dt}} = \frac{- 1}{\tau}(1 - \lambda^{2}\nabla^{2})\Pi + \frac{1}{\tau}\omega$$
@@ -76,7 +76,7 @@ with $\Pi_{0} = 0$
 
 Here, $\omega_{i}$ is a white noise term that follows Brownian motion.
 It can be easily generated independently for each patch for every
-step\(i\)of the simulation. For each patch,
+step \(i\) of the simulation. For each patch,
 
 $$\omega_{i} = \omega_{i - 1} + Normal(0,dt)$$
 
@@ -96,8 +96,7 @@ at a livable, unoccupied patch \(j,k\) be
 
 The simulation is initialized by creating the virtual environment and planting the initial populations of mangroves.
 
-During each step, a Poisson-distributed random time interval
-\(\text{dt}\) with a mean of 1 day is generated as per \cite{SalmoJuanico2015}. Each
+During each step, a Poisson-distributed random time interval \(\text{dt}\) with a mean of 1 day is generated as per \cite{SalmoJuanico2015}. Each
 agent grows in diameter according to the growth equation and
 proportionally to \(\text{dt}\); that is, the change in diameter during a
 step in the simulation is calculated as \(\frac{\text{dD}}{\text{dt}}dt = dD\).

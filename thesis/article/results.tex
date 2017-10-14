@@ -1,48 +1,8 @@
-A sensitivity analysis of the model was conducted. Simulations were run for 5000 steps.
-The number of blocks in the block disturbance model and the allometric
-parameters $\alpha$, $\beta$, and $\gamma$ are all varied in a simulation of 100 runs.
+A sensitivity analysis of the model was conducted. Simulations were run for 5000 steps each.
+The number of blocks in the block disturbance model, the correlation time and length, and the allometric parameters $\alpha$, $\beta$, and $\gamma$ are all varied.
 
-\textbf{Native (\emph{Avicennia} \& \emph{Sonneratia}) Regeneration Time
-(in Years)}
-
-\resizebox{0.45 \textwidth}{!}{%
-\begin{tabular}{|c|c|c|c|c|}
-\hline 
-Storm Strength & 0 & 1 & 2 & 3 \\ 
-\hline 
-Vary Alpha & 5.2967 & 5.7689 & 5.4555 & 3.5801 \\ 
-\hline 
-Vary Beta & 5.4425 & 5.8638 & 6.1561 & 3.6421 \\ 
-\hline 
-Vary Gamma & 5.2692 & 4.8554 & 2.4394 & 0.8263 \\ 
-\hline 
-All Constant & 4.6465 & 5.1117 & 2.1420 & 0.8167 \\ 
-\hline 
-\end{tabular}}
-
-\textbf{Planted (\emph{Rhizophora}) Regeneration Time (in Years)}
-
-\resizebox{0.45 \textwidth}{!}{%
-\begin{tabular}{|c|c|c|c|c|}
-\hline 
-Storm Strength & 0 & 1 & 2 & 3 \\ 
-\hline 
-Vary Alpha & 3.608 & 3.5814 & 3.5319 & 3.5801 \\ 
-\hline 
-Vary Beta & 4.1360 & 3.5378 & 3.5349 & 3.6421 \\ 
-\hline 
-Vary Gamma & 2.5837 & 2.5142 & 2.6025 & 0.8263 \\ 
-\hline 
-All Constant & 2.5160 & 2.1776 & 2.7602 & 2.9600 \\ 
-\hline 
-\end{tabular}}
-
-The dominant population at the end of each configuration was also
-recorded, with the results summarized in the table below. N indicates
-the native \emph{Avicennia \& Sonneratia} population dominated, while P
-indicates the planted \emph{Rhizophora} population dominated. The number
-in the parentheses indicate how frequently this occurred, since each
-configuration was repeated multiple times.
+The dominant population at the end of each configuration was recorded, with the results summarized in the table below. N indicates the native \emph{Avicennia \& Sonneratia} population dominated, while P indicates the planted \emph{Rhizophora} population dominated. The number
+in the parentheses indicate how frequently this occurred across the multiple runs.
 
 \resizebox{0.45 \textwidth}{!}{%
 \begin{tabular}{|c|c|c|c|c|}
@@ -60,8 +20,7 @@ All Constant & N (99\%) & N (98\%) & N (72\%) & P (74\%) \\
 \end{tabular}}
 
 There are two sets of runs in which the \emph{Rhizophora} dominated the
-environment: when everything is constant or when $\gamma$ (allometric parameter
-related to maximum height) is varying; both instances have 3 blocks
+environment, both occurring when three (3) blocks were used for 
 being disturbed. Native genera were shown to fare consistently better
 than \emph{Rhizophora} when all of these mangrove populations were mixed
 in the planted site. They displayed stable or slowly increasing
@@ -70,6 +29,16 @@ notwithstanding. The faster recovery rate of the planted mangroves can
 be attributed to its small population. Since they initially had a small
 population, it stands to reason that they need only a small amount of
 time before reaching the pre-disaster population again.
+
+\subsection{Experiment}
+
+An stochastic experiment was carried out in order to validate the model against 
+field observations of post-storm disaster recovery of coastal woodlands in Pangasinan. Empirical observations indicated a recovery time of 5-7 years for
+the native genera (\textit{Avicennia} and \textit{Sonneratia}). The non-native genera (\textit{Rhizophora}) only recovered up to 40\% around 7 years after the storm. Recovery is measured as the percentage of total forest cover regained post-storm.
+
+In the simulation, total forest cover is calculated as the sum of crown areas for all mangroves in 
+a population. Crown area (or the area covered by the tree's foliage) can be estimated using the
+plant's diameter at breast height \cite{Hiebeler2000}, where: $r_{crown} = 11.1D^{0.645}$. The crown area is calculated using the crown radius (in square centimeters).
 
 \section{Conclusions and
 Recommendations}\label{conclusions-and-recommendations}

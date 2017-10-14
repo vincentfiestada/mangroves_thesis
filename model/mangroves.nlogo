@@ -32,7 +32,7 @@ to setup
   set deaths 0
 
   ; Setup map/world
-  set trueSize 750 ; For Bani map
+  set trueSize 5250; For Bani map
   set resolution trueSize / (max-pxcor + 1)
 
   setup-patches ; Setup patch values
@@ -168,8 +168,8 @@ to setup-patches
   init-features
   recolor-patches
   ask patches [
-    ; Assume shore-dist is 150
-    set salinity min list (0.48 * (150 - dist)) 72
+    ; Assume shore-dist is 7350
+    set salinity min list (0.48 * (150 - dist)) 7.2
     set salinity (1 + e ^ ((salinity - 72) / 4)) ^ -1
     set inundation min list (0.00533 * (150 - dist)) 1
     set inundation 1 - inundation
@@ -197,13 +197,13 @@ end
 to init-big-patches
   ; first compute bigpatch once for each region's left bottom patch
   let patchGroup 0
-  foreach n-values 5 [? * 10]
+  foreach n-values 5 [? * 70]
   [ let xx ?
-    foreach n-values 5 [? * 10]
+    foreach n-values 5 [? * 70]
     [ let yy ?
       ask patch xx yy
-      [ let bigSet patches with [pxcor >= xx and pxcor < xx + 10
-                                   and pycor >= yy and pycor < yy + 10]
+      [ let bigSet patches with [pxcor >= xx and pxcor < xx + 70
+                                   and pycor >= yy and pycor < yy + 70]
         ask bigSet [set bigPatch patchGroup]
         ;set patch-group patch-group ; + 1  ; incr region color
         ; now propogate big-set to whole region and color it
@@ -220,7 +220,7 @@ to init-dist
   set gisDist gis:load-dataset gis-distances-filename
   gis:set-world-envelope-ds gis:envelope-of gisDist
   gis:apply-raster gisDist dist
-  diffuse dist 0.9
+  diffuse dist 0.2
 
   ask patches [set dist (dist * resolution) ^ 1.125]
 end
@@ -490,11 +490,11 @@ to-report chance-of-dying
       set p 0.083
     ]
   ][
-    set p 0.24 * (((x - 2.5) * (x - 5.0))/((0.5 - 2.5) * (0.5 - 5.0)))
-    set p p + 0.12 * (((x - 0.5) * (x - 5))/((2.5 - 0.5) * (2.5 - 5.0)))
-    set p p + 0.1 * (((x - 0.5) * (x - 2.5))/((5.0 - 0.5) * (5.0 - 2.5)))
+    set p 0.3 * (((x - 2.5) * (x - 5.0))/((0.5 - 2.5) * (0.5 - 5.0)))
+    set p p + 0.1 * (((x - 0.5) * (x - 5))/((2.5 - 0.5) * (2.5 - 5.0)))
+    set p p + 0.09 * (((x - 0.5) * (x - 2.5))/((5.0 - 0.5) * (5.0 - 2.5)))
     if x >= 5 [
-      set p 0.1
+      set p 0.3
     ]
   ]
   report p
@@ -602,10 +602,6 @@ to storm
     ]
     set i i + 1
   ]
-
-  ; Now that a storm has occurred, wait only 6 more years
-  ; set max-days ticks + 365 * 6
-
 end
 
 to-report planted-patches
@@ -671,10 +667,15 @@ to-report next-storm-schedule
   ; Get next storm schedule (in simulated days)
   ; report days + random-exponential storm-beta
   ; For experimentation, make it fixed:
-  ifelse days = 0 [
-    report days + storm-beta
+
+  ifelse one-scheduled-storm = true [
+    ifelse days = 0 [
+      report days + storm-beta
+    ][
+      report days + 10000000
+    ]
   ][
-    report days + 1000000
+    report days + random-exponential storm-beta
   ]
 end
 
@@ -682,7 +683,7 @@ to recolor-mangrove
   ; Recolor a mangrove based on its age
   let tree-color green
   if species = "planted" [
-    set tree-color turquoise
+    set tree-color violet
   ]
   ifelse diameter < 2.5 [
     set color tree-color + 1.5
@@ -747,7 +748,7 @@ end
 
 to recolor-big-patches
   ask patches [
-    set pcolor scale-color violet (bigPatch * 10) 500 -500
+    set pcolor scale-color pink (bigPatch * 10) 500 -500
   ]
   set dynamicView 0
 end
@@ -790,6 +791,7 @@ to load-scenario
   set v-alpha read-from-string file-read-line
   set v-beta read-from-string file-read-line
   set v-gamma read-from-string file-read-line
+  set one-scheduled-storm read-from-string file-read-line
 
   file-close
 end
@@ -797,11 +799,11 @@ end
 GRAPHICS-WINDOW
 10
 15
-486
-512
+720
+746
 -1
 -1
-9.32
+2.0
 1
 12
 1
@@ -812,9 +814,9 @@ GRAPHICS-WINDOW
 0
 1
 0
-49
+349
 0
-49
+349
 1
 1
 1
@@ -822,10 +824,10 @@ steps
 60.0
 
 INPUTBOX
-502
-24
-657
-84
+9
+866
+164
+926
 initial-native-population
 300
 1
@@ -833,10 +835,10 @@ initial-native-population
 Number
 
 INPUTBOX
-502
-174
-657
-234
+9
+1016
+164
+1076
 range-offset
 0.25
 1
@@ -844,10 +846,10 @@ range-offset
 Number
 
 BUTTON
-503
-257
-567
-290
+736
+97
+800
+130
 Reset
 setup
 NIL
@@ -861,10 +863,10 @@ NIL
 1
 
 BUTTON
-592
-256
-655
-289
+814
+97
+877
+130
 Go
 simulate
 T
@@ -878,10 +880,10 @@ NIL
 1
 
 INPUTBOX
-664
-24
-819
-84
+171
+866
+326
+926
 max-days
 5000
 1
@@ -889,47 +891,47 @@ max-days
 Number
 
 INPUTBOX
-665
-100
-820
-160
+172
+942
+327
+1002
 correlation-time
-0.25
+1
 1
 0
 Number
 
 INPUTBOX
-668
-174
-824
-234
+170
+1016
+326
+1076
 diffusion-rate
-0.25
+1
 1
 0
 Number
 
 SLIDER
-1022
-470
-1177
-503
+529
+1312
+684
+1345
 mangrove-display-scale
 mangrove-display-scale
 1
 20
-4
+19
 1
 1
 NIL
 HORIZONTAL
 
 BUTTON
-504
-309
-604
-342
+738
+142
+838
+175
 Terrain View
 recolor-patches\nset dynamicView 0
 NIL
@@ -943,10 +945,10 @@ NIL
 1
 
 BUTTON
-619
-308
-719
-341
+853
+141
+953
+174
 Salinity View
 recolor-patches-by-salinity
 NIL
@@ -960,10 +962,10 @@ NIL
 1
 
 BUTTON
-738
-307
-858
-340
+972
+140
+1092
+173
 Inundation View
 recolor-patches-by-inundation
 NIL
@@ -977,10 +979,10 @@ NIL
 1
 
 BUTTON
-505
-346
-640
-379
+739
+179
+874
+212
 Recruitment Chance View
 recolor-patches-by-recruitment
 NIL
@@ -994,10 +996,10 @@ NIL
 1
 
 MONITOR
-870
-17
-1014
-82
+377
+859
+521
+924
 Days Simulated
 days
 2
@@ -1005,13 +1007,13 @@ days
 16
 
 PLOT
-872
-93
-1322
-461
+379
+935
+829
+1303
 Forest Cover
 Days
-Mangroves
+Total Forest Cover (cm^2)
 0.0
 100.0
 0.0
@@ -1025,10 +1027,10 @@ PENS
 "Planteds" 1.0 0 -14730904 true "" "plot current-coverage mangroves with [species = \"planted\"]"
 
 SLIDER
-870
-470
-1010
-503
+377
+1312
+517
+1345
 tree-protect
 tree-protect
 0
@@ -1040,10 +1042,10 @@ NIL
 HORIZONTAL
 
 INPUTBOX
-666
-242
-821
-302
+171
+1085
+326
+1145
 storm-beta
 1000
 1
@@ -1051,10 +1053,10 @@ storm-beta
 Number
 
 MONITOR
-1024
-18
-1180
-63
+531
+860
+687
+905
 Next Storm Scheduled at
 nextStorm
 2
@@ -1062,10 +1064,10 @@ nextStorm
 11
 
 BUTTON
-650
-346
-740
-379
+884
+179
+974
+212
 Big Patch View
 recolor-big-patches
 NIL
@@ -1079,10 +1081,10 @@ NIL
 1
 
 BUTTON
-753
-346
-853
-379
+987
+179
+1087
+212
 Mortality View
 recolor-patches-by-mortality
 NIL
@@ -1096,10 +1098,10 @@ NIL
 1
 
 INPUTBOX
-504
-99
-659
-159
+11
+941
+166
+1001
 initial-planted-population
 600
 1
@@ -1107,10 +1109,10 @@ initial-planted-population
 Number
 
 PLOT
-13
-626
-720
-1009
+14
+1451
+721
+1834
 Population by Maturity
 Time
 Mangroves
@@ -1131,10 +1133,10 @@ PENS
 "Storm" 1.0 1 -2674135 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 
 PLOT
-732
-623
-1321
-852
+734
+1452
+1323
+1681
 Average Tree DBH
 Time
 Ave. Diameter
@@ -1149,10 +1151,10 @@ PENS
 "avgTreeDiameter" 10.0 1 -955883 true "" "let s 0\nask mangroves with [diameter >= 5] [\n    set s s + diameter\n]\nlet n count mangroves with [diameter >= 5]\nifelse n > 0 [\n  let a s / n\n  plot a\n][\n  plot 0\n]"
 
 PLOT
-732
-858
-1318
-1008
+734
+1687
+1320
+1837
 Average Tree Age
 Time
 Age
@@ -1167,10 +1169,10 @@ PENS
 "age" 10.0 1 -10022847 true "" "let s 0\nask mangroves with [diameter >= 5] [\n    set s s + age\n]\nlet n count mangroves with [diameter >= 5]\nifelse n > 0 [\n  let a s / n\n  plot a\n][\n  plot 0\n]"
 
 PLOT
-15
-1020
-822
-1234
+16
+1845
+823
+2059
 Regeneration Time
 Time
 Regeneration Time
@@ -1187,10 +1189,10 @@ PENS
 "Planted Trees" 1.0 0 -13403783 true "" "plot regenerationTimePlanted"
 
 INPUTBOX
-507
-386
-660
-446
+14
+1228
+167
+1288
 gis-features-filename
 bani_features.asc
 1
@@ -1198,10 +1200,10 @@ bani_features.asc
 String
 
 INPUTBOX
-687
-387
-862
-447
+194
+1229
+369
+1289
 gis-distances-filename
 bani_distance.asc
 1
@@ -1209,10 +1211,10 @@ bani_distance.asc
 String
 
 MONITOR
-20
-446
-108
-503
+734
+23
+822
+80
 Population
 count mangroves
 0
@@ -1220,10 +1222,10 @@ count mangroves
 14
 
 PLOT
-827
-1020
-1319
-1233
+828
+1845
+1320
+2058
 Killed by Storm
 Time
 Storm Victims
@@ -1239,10 +1241,10 @@ PENS
 "Storm" 1.0 2 -5298144 true "" "if stormOccurred = True [\n    plot-pen-up\n    plot-pen-down\n    plotxy ticks plot-y-max\n  ]"
 
 MONITOR
-116
-463
-179
-504
+830
+40
+893
+81
 Native Pop
 count mangroves with [species = \"native\"]
 0
@@ -1250,10 +1252,10 @@ count mangroves with [species = \"native\"]
 10
 
 MONITOR
-183
-463
-248
-504
+897
+40
+962
+81
 Planted Pop
 count mangroves with [species = \"planted\"]
 0
@@ -1261,10 +1263,10 @@ count mangroves with [species = \"planted\"]
 10
 
 SWITCH
-1192
-19
-1312
-52
+699
+861
+819
+894
 allow-storms
 allow-storms
 0
@@ -1272,10 +1274,10 @@ allow-storms
 -1000
 
 SLIDER
-825
-29
-858
-302
+333
+866
+366
+1139
 storm-strength
 storm-strength
 0
@@ -1287,10 +1289,10 @@ NIL
 VERTICAL
 
 SWITCH
-508
-475
-598
-508
+15
+1317
+105
+1350
 v-alpha
 v-alpha
 0
@@ -1298,20 +1300,20 @@ v-alpha
 -1000
 
 TEXTBOX
-511
-454
-603
-472
+18
+1296
+110
+1314
 Variables to Vary:
 11
 0.0
 1
 
 SWITCH
-609
-475
-699
-508
+116
+1317
+206
+1350
 v-beta
 v-beta
 0
@@ -1319,10 +1321,10 @@ v-beta
 -1000
 
 SWITCH
-708
-475
-798
-508
+215
+1317
+305
+1350
 v-gamma
 v-gamma
 0
@@ -1330,30 +1332,30 @@ v-gamma
 -1000
 
 CHOOSER
-16
-566
-169
-611
+17
+1391
+170
+1436
 scenario
 scenario
 "default" "nativesOnly" "plantedsOnly" "nativesSmall" "plantedsSmall" "equalPopulations" "island"
 0
 
 TEXTBOX
-16
-534
-182
-557
+17
+1359
+183
+1382
 Scenario Picker:
 22
 102.0
 1
 
 BUTTON
-181
-566
-311
-612
+182
+1391
+312
+1437
 Load Scenario
 load-scenario
 NIL
@@ -1366,6 +1368,27 @@ NIL
 NIL
 1
 
+SWITCH
+511
+1386
+683
+1419
+one-scheduled-storm
+one-scheduled-storm
+0
+1
+-1000
+
+TEXTBOX
+700
+1387
+872
+1429
+If true, there will be a single storm scheduled at `storm-beta` days
+11
+0.0
+1
+
 @#$#@#$#@
 # Mangroves Thesis
 
@@ -1373,19 +1396,12 @@ Please read the wiki at [https://github.com/vincentfiestada/mangroves_thesis/wik
 
 This is an agent-based model for the regrowth of multi-species mangrove forests in fragmented habitats by Vincent Paul Fiestada and Andrew Vince Lorbis, undergrad students at the University of the Philippines Diliman Department of Computer Science.
 
-## Model Re-write Status
-
-The model is being re-written, using code from the previous version as well as new features such as using colored noise for population spread.
-
-**CURRENT VERSION:** Two species, map with elevation, salinity, and inundation from custom GIS raster files, storms and time increment are Poisson distributed, spatiotemporally coloured random seed dispersal, customizable storm strength, storm frequency, etc., graphs monitoring population, average lifespan, species recovery time, etc.
-
-**TODO:** We are still planning to implement a scenario picker to allow users to easily pick custom settings. Scenarios will be based on a text file that can be easily edited.
-
 ### A Note on Units
 
 For the variables and parameters below, the following units of measurement are used:
 
 - centimeters (length)
+- square centimeters (area)
 - days (time)
 
 ## How the Model Works
@@ -1422,8 +1438,8 @@ To understand how the model simulates mangrove growth and what affects the simul
 - **nextStorm:** schedule for when the next storm hits. It is calculated as a sample from an Exponential distribution (since storms are assumed to Poisson events)
 - **stormOccurred:** True if a storm occurred during the previous step
 - **stormKilled:** Number of plants killed by the storm during the previous step
-- **popBeforeStormNative:** Native species population before the previous storm occurred
-- **popBeforeStormPlanted:** Planted species population before the previous storm occurred
+- **caBeforeStormNative:** Native genera total forest cover before the previous storm occurred
+- **caBeforeStormPlanted:** Planted genera total forest cover before the previous storm occurred
 - **regenerationTimeNative:** Time since the previous storm and before the native population has recovered
 - **regenerationTimePlanted:** Time since the previous storm and before the planted population has recovered
 - **avgRegTimeNative:** Current average regeneration time for the native species
@@ -1461,7 +1477,7 @@ Before beginning the simulation, you'll notice that there are several input fiel
 21. Number of days simulated
 22. When the next storm will occur
 23. Switch to control whether storms occur or not
-24. Population Graph. It shows the number of mangroves of each species over time. The red dots are when storms happen.
+24. Forest Cover Graph. It shows the estimated total forest cover for each population through time. A red line at the top indicates the recovery period.
 25. Determines how much the chances of dying from a storm is mitigated by the number of neighbors a tree has.
 26. How big mangroves are drawn on the map [1]. This has nothing to do with the internals of the simulation.
 27. Graph of population, broken down by maturity levels (seedling, sapling, tree)

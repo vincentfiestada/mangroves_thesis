@@ -1,0 +1,32 @@
+["max-days" 20000]
+["range-offset" [0 0.25 0.75]]
+["mangrove-display-scale" 4]
+["initial-planted-population" 300]
+["initial-native-population" 600]
+["allow-storms" true]
+["gis-features-filename" "bani_features.asc"]
+["gis-distances-filename" "bani_distance.asc"]
+["v-alpha" true]
+["v-beta" true]
+["v-gamma" true]
+["correlation-time" [0.25 0.25 2]]
+["diffusion-rate" [0.25 0.25 2]]
+["storm-beta" 8212]
+["tree-protect" 0.13]
+["scenario" "default"]
+["storm-strength" 1 2 3 4 5]
+
+========================================
+
+5
+
+========================================
+
+count natives
+count planteds
+avgRegTimeNative
+avgRegTimePlanted
+
+========================================
+
+        setup      |     simulate

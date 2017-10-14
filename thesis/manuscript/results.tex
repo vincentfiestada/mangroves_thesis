@@ -1,0 +1,36 @@
+\section{Sensitivity Analysis}
+
+A sensitivity analysis of the model was conducted. Simulations were run for 5000 steps each. The number of blocks in the block disturbance model (which represents the strength of the storms), the correlation time and length are all varied across multiple runs. The allometric parameters $\alpha$, $\beta$, and $\gamma$ are selectively varied.
+
+The dominant population at the end of each configuration was recorded, with the results summarized in Table 4.1. N indicates the native \emph{Avicennia \& Sonneratia} population dominated, while P indicates the planted \emph{Rhizophora} population dominated. The percentage values indicate how frequently this occurred across the multiple runs.
+\begin{table}
+\begin{tabular}{|c|c|c|c|c|}
+\hline 
+Storm Strength & 0 & 1 & 2 & 3 \\ 
+\hline 
+Vary Alpha & N (90\%) & N (99\%) & N (90\%) & N (71\%) \\ 
+\hline 
+Vary Beta & N (93\%) & N (100\%) & N (97\%) & N (72\%) \\ 
+\hline 
+Vary Gamma & N (100\%) & N (98\%) & N (76\%) & P (79\%) \\ 
+\hline 
+All Constant & N (99\%) & N (98\%) & N (72\%) & P (74\%) \\ 
+\hline 
+\end{tabular}
+\caption{Dominant populations after running for 5000 steps across multiple runs}
+\end{table}
+
+Native genera were shown to fare consistently better than \emph{Rhizophora}. 
+There are two sets of runs in which the \emph{Rhizophora} dominated the
+environment. From these results we may gauge the model to be sensitive to the number of blocks used in the block disturbance model, this being a primary influencing factor in determining post-disaster forest structure.
+
+\section{Experiment}
+
+An stochastic experiment was carried out in order to validate the model against 
+field observations of post-storm disaster recovery of coastal woodlands in Pangasinan. Empirical observations indicated a recovery time of 5-7 years for the native genera (\textit{Avicennia} and \textit{Sonneratia}). The non-native genera (\textit{Rhizophora}) only recovered up to 40\% around 7 years after the storm. Recovery is measured as the percentage of total forest cover regained post-storm.
+
+In the simulation, total forest cover is calculated as the sum of crown areas for all mangroves in 
+a population. Crown area (or the area covered by the tree's foliage) can be estimated using the
+plant's diameter at breast height \cite{berger}, where: $r_{crown} = 11.1D^{0.645}$. The crown area is calculated using the crown radius (in square centimeters) with the assumption that the tree crown is a circular region.
+
+\textbf{INSERT TABLES HERE}
